@@ -96,5 +96,3 @@ collars <- subset(collars, select = c(acquisition_time,
                                       collar_id,
                                       animal_id
                                       ))
-
-#
