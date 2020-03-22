@@ -1,6 +1,3 @@
-# Reading in the data
-collars <- read.csv("C:/Users/Geoffrey/Desktop/collar_data.csv", header = T, sep = ",", na.strings = NA)
-
 # I like underscores and all lowercase in headers, so why not fix that?
 names(collars) <- lapply(names(collars), function(v) {
   if (is.character(v)) return(tolower(v))
@@ -9,11 +6,14 @@ names(collars) <- lapply(names(collars), function(v) {
 
 names(collars) <- gsub("\\.", "_", names(collars))
 
-# Get rid of the NA rows introduced from the Macros in Excel.
-collars <- collars[!is.na(collars$acquisition_time),]
+# Get just Resolved QFP data
+collars <- collars[collars$gps_fix_attempt == 'Resolved QFP',]
 
 # Get rid of predeployment data
 collars <- collars[!collars$predeployment_data == "Yes",]
+
+# Get rid of the NA rows.
+collars <- collars[!is.na(collars$acquisition_time),]
 
 #Create a collar identification number column
 collars$collar_id <- 0
