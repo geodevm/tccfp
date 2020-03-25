@@ -165,6 +165,6 @@ collars <- subset(collars, select = c(acquisition_time,
 
 ###### MAKE SURE TO SET THE DIRECTORY AS A NEW ONE or else you'll have problems when
 ###### you rerun this.
-path_out = # Your directory here
-write.csv(dt, paste(path_out, 'compiled_collar_data.csv', sep = ''))
+setwd()
+write.csv(collars, 'compiled_collar_data.csv')
 
