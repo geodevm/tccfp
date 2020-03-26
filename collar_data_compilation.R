@@ -63,3 +63,4 @@ for (i in 1:l) {
 
 # Combine into one table
 collars <- do.call(rbind,csvs)
+
