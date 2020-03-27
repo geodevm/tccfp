@@ -48,10 +48,10 @@ for (i in 1:dim(collars)[1]) {
 }
 
 # Datetimes to POSIXct
-collars$acquisition_time <- as.POSIXct(collars$acquisition_time, format = "%Y.%m.%d %H:%M:%S")
-collars$gps_fix_time <- as.POSIXct(collars$gps_fix_time, format = "%Y.%m.%d %H:%M:%S")
-collars$acquisition_start_time <- as.POSIXct(collars$acquisition_start_time, format = "%Y.%m.%d %H:%M:%S")
-collars$receive_time <- as.POSIXct(collars$receive_time, format = "%Y.%m.%d %H:%M:%S")
+collars$acquisition_time <- as.POSIXct(collars$acquisition_time, format = "%Y.%m.%d %H:%M:%S", tz = 'UTC')
+collars$gps_fix_time <- as.POSIXct(collars$gps_fix_time, format = "%Y.%m.%d %H:%M:%S", tz = 'UTC')
+collars$acquisition_start_time <- as.POSIXct(collars$acquisition_start_time, format = "%Y.%m.%d %H:%M:%S", tz = 'UTC')
+collars$receive_time <- as.POSIXct(collars$receive_time, format = "%Y.%m.%d %H:%M:%S", tz = 'UTC')
 
 # Deal with redeployment of collars
 collars$animal_id <- 0
@@ -60,12 +60,15 @@ for (i in 1:dim(collars)[1]) {
     collars$animal_id[i] <- NA
   } else if (!is.na(collars$collar_id[i]) & is.na(collars$gps_fix_time[i])) {
     collars$animal_id[i] <- collars$animal_id[i - 1]
-  }  else if (collars$collar_id[i] == "C1" & collars$gps_fix_time[i] > as.POSIXct("2020-02-03 00:00:00")) {
+  }  else if (collars$collar_id[i] == "C1" & collars$gps_fix_time[i] > as.POSIXct("2020-02-06 00:00:00", tz = 'UTC')) {
     collars$animal_id[i] <- "C11"
   } else {
     collars$animal_id[i] <- collars$collar_id[i]
   }
 }
+
+# Remove this observation, when coyote was transferred to vet clinic overnight.
+collars <- collars[-(collars$acquisition_time == as.POSIXct("2019-12-18 05:00:16", tz = 'UTC')),]
 
 # Animal ID should be a factor
 collars$animal_id <- as.factor(collars$animal_id)
@@ -99,3 +102,4 @@ collars <- subset(collars, select = c(acquisition_time,
                                       collar_id,
                                       animal_id
                                       ))
+

@@ -121,7 +121,7 @@ image(F1.kde) # Nope
 F1.rast <- raster(as(F1.kde, "SpatialPixelsDataFrame")) # Nope
 plot(F1.rast) # Nope
 plot(F1.sp, add = T) # Nope
-writeRaster(F1.rast, "F1.kde.tif") # Nope
+#writeRaster(F1.rast, "F1.kde.tif") # Nope
 
 F1.kde95 <- getverticeshr(F1.kde, percent = 95, unin = "m", unout = "km2")
 
@@ -131,7 +131,7 @@ plot(F1.kde95, add = T) # Nope
 # As I comment also above, make sure your directory is set somewhere besides where you are storing the data before
 # running this or else you'll run into problems.
 
-writeOGR(F1.kde95, dsn = ".", layer = "F1.kde95", driver="ESRI Shapefile")
+#writeOGR(F1.kde95, dsn = ".", layer = "F1.kde95", driver="ESRI Shapefile")
 
 # That should be all you need as components of a pretty efficient for loop. Work flow will look like this:
 # 1. Filter for just that animal
@@ -147,15 +147,20 @@ levels(collars$animal_id)
 # The advice I can give you for writing a for loop is to look at what is common throughout all of the commands that you call to do this
 # task, and make that the iterator. If you get totally stuck, that's understandable. Give it a try though!
 
-collars$animal_id
+less <- c()
+for(i in 1:dim(collars)) {
+  if (collars$animal_id[i] == 'C1' & collars$acquisition_time[i] >= as.POSIXct("2020-01-16 00:00:00", tz = 'UTC'))
+    less <- c(less, i)
+}
+collars <- collars[-less,]
 
-setwd('C:/Users/Geoffrey/Desktop/')
+plot(collars.all)
+setwd('C:/Users/Geoffrey/Desktop/test/')
 for (i in levels(collars$animal_id)) {
-  i.f <- collars[collars$animal_id == "C1",]
+  i.f <- collars[collars$animal_id == i,]
   i.sp <- SpatialPoints(i.f[c("gps_longitude", "gps_latitude")])
   proj4string(i.sp) <- CRS("+proj=utm +zone=15 +ellps=GRS80 +datum=NAD83 +no_defs")
   i.kde <- kernelUD(i.sp, h = "href",grid = 1000)
   i.kde95 <- getverticeshr(i.kde, percent = 95, unin = "m", unout = "km2")
-  plot(i.kde95)
-  #writeOGR(i.kde95, dsn = ".", layer = paste(i, ".kde95", sep = ''), driver="ESRI Shapefile")
+  writeOGR(i.kde95, dsn = ".", layer = paste(i, ".kde95", sep = ''), driver="ESRI Shapefile")
 }
