@@ -146,3 +146,16 @@ levels(collars$animal_id)
 
 # The advice I can give you for writing a for loop is to look at what is common throughout all of the commands that you call to do this
 # task, and make that the iterator. If you get totally stuck, that's understandable. Give it a try though!
+
+collars$animal_id
+
+setwd('C:/Users/Geoffrey/Desktop/')
+for (i in levels(collars$animal_id)) {
+  i.f <- collars[collars$animal_id == "C1",]
+  i.sp <- SpatialPoints(i.f[c("gps_longitude", "gps_latitude")])
+  proj4string(i.sp) <- CRS("+proj=utm +zone=15 +ellps=GRS80 +datum=NAD83 +no_defs")
+  i.kde <- kernelUD(i.sp, h = "href",grid = 1000)
+  i.kde95 <- getverticeshr(i.kde, percent = 95, unin = "m", unout = "km2")
+  plot(i.kde95)
+  #writeOGR(i.kde95, dsn = ".", layer = paste(i, ".kde95", sep = ''), driver="ESRI Shapefile")
+}

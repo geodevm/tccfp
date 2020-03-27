@@ -133,6 +133,9 @@ for (i in 1:dim(collars)[1]) {
   }
 }
 
+# Animal ID should be a factor
+collars$animal_id <- as.factor(collars$animal_id)
+
 # If this is direct from satellite, filter out useless columns as well as predeployment and others used for filtering.
 collars <- subset(collars, select = c(acquisition_time,
                                       acquisition_start_time,
