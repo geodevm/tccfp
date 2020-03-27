@@ -140,5 +140,9 @@ writeOGR(F1.kde95, dsn = ".", layer = "F1.kde95", driver="ESRI Shapefile")
 # 4. Make the 95% KDE boundary.
 # 5. Write out the file (IN THE RIGHT DIRECTORY!)
 
+# Also, this might be a useful command in the loop
+
+levels(collars$animal_id)
+
 # The advice I can give you for writing a for loop is to look at what is common throughout all of the commands that you call to do this
 # task, and make that the iterator. If you get totally stuck, that's understandable. Give it a try though!
