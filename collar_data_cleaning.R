@@ -67,8 +67,17 @@ for (i in 1:dim(collars)[1]) {
   }
 }
 
+# Also deal with the gps points fixed when moved after death in C1
+less <- c()
+for(i in 1:dim(collars)) {
+  if (collars$animal_id[i] == 'C1' & collars$acquisition_time[i] >= as.POSIXct("2020-02-02 00:00:00", tz = 'UTC'))
+    less <- c(less, i)
+}
+collars <- collars[-less,]
+
 # Remove this observation, when coyote was transferred to vet clinic overnight.
-collars <- collars[-(collars$acquisition_time == as.POSIXct("2019-12-18 05:00:16", tz = 'UTC')),]
+collars <- collars[!(collars$gps_latitude == 45.015218 & collars$animal_id == 'C2'),]
+
 
 # Animal ID should be a factor
 collars$animal_id <- as.factor(collars$animal_id)

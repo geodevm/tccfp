@@ -201,7 +201,7 @@ trk1 <- trk %>% group_by(id) %>% nest() %>% as.data.frame() %>%
          nsd_=map(data, nsd),
          ) %>% unnest()
 trk1
-
+trk
 #' Now, calculate month, year, hour, week of each observation and append these to the dataset.
 #' Unlike the movement charactersitics, these calculations can be done all at once, 
 #' since they do not utilize successive observations (like step lengths and turn angles do).
