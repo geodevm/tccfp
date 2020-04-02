@@ -112,3 +112,6 @@ collars <- subset(collars, select = c(acquisition_time,
                                       animal_id
                                       ))
 
+setwd("C:/Users/Geoffrey/Desktop/")
+write.csv(collars, "full.dat.csv")
+
