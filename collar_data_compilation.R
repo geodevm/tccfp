@@ -1,5 +1,5 @@
 # Set the directory to wherever you are keeping all of the downloaded reports data from Telonics
-setwd('C:/Users/Geoffrey/Documents/TCCFP/Telonics Data Converter/Reports/')
+setwd('U:/research/tccfp/Telonics Data Converter/Reports/')
 
 # Store the names of the files in "files"
 files <- list.files()
@@ -62,5 +62,5 @@ for (i in 1:l) {
 }
 
 # Combine into one table
-collars <- do.call(rbind,csvs)
+#collars <- do.call(rbind,csvs)
 
