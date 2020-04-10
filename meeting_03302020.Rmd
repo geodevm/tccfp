@@ -113,8 +113,9 @@ ggplot(canid.dat,
 #### Horizontal lines = quartiles, vertical = species divide.
 
 ```{r}
-joined <- read.csv("C:/Users/Geoffrey/Desktop/joined_data.csv")
+joined <- read.csv("U:/research/tccfp/joined_data.csv")
 list <- tapply(joined$X.2imp_pop, joined$animal_id, mean, na.rm = TRUE)
+
 plot(list)
 abline(0.063, 0)
 abline(0.101, 0)

@@ -1,11 +1,126 @@
-for (i in 1:dim(collars)) {
-  collars$difftime[i] <- difftime(collars$acquisition_time[i + 1], collars$acquisition_time[i], units = "hours")
-  if (collars$difftime[i-1] < 1 & collars$difftime[i-1]) {
-    collars$difftime[i] == collars$difftime[i-1]
-  } else if (is.na(collars$difftime[i-1]) | is.na(collars$difftime[i])) {
-    collars$difftime[i] == collars$difftime[i]
+library(adehabitatHR)
+library(rgdal)
+library(rgeos)
+library(raster)
+library(tidyverse)
+# Filter out bursts
+for (i in 1:as.numeric(dim(collars))) {
+  if (collars$animal_id[i + 1] != collars$animal_id[i] | as.numeric(dim(collars)) == i) {
+    collars$difftime[i] <- NA
+  } else if (collars$animal_id[i + 1] == collars$animal_id[i]) {
+    collars$difftime[i] <- difftime(collars$acquisition_time[i + 1], collars$acquisition_time[i], units = "hours")
   }
 }
+for (i in 1:as.numeric(dim(collars))) {
+  if (collars$difftime[i] < 1.5) {
+    j = i
+    while (collars$difftime[j+1] < 1 | is.na(collars$difftime[j+1])) {
+      collars <- collars[-(j+1),]
+    }
+  }
+}
+if (collars$difftime[1] < 1) {
+  collars <- collars[!1,]
+}
+collars$difftime <- NULL
+
+# Filter in bursts
+filter.fine <- function (x) {
+  for (i in 1:as.numeric(dim(x))) {
+    if (x$animal_id[i + 1] != x$animal_id[i] | as.numeric(dim(x)) == i) {
+      x$difftime[i] <- NA
+    } else if (x$animal_id[i + 1] == x$animal_id[i]) {
+      x$difftime[i] <- difftime(x$acquisition_time[i + 1], x$acquisition_time[i], units = "hours")
+    }
+  }
+  for (i in 1:as.numeric(dim(x))) {
+   if (is.na(x$difftime[i])) {
+      if (i == as.numeric(dim(x))){
+        x$difftime[i] <- x$difftime[i]
+      } else if (x$difftime[i+1] > 1) {
+        j = i  
+        while (x$difftime[j+1] > 1 | is.na(x$difftime[j+1])) {
+          x <- x[-(j+1),]
+        }
+      } else {
+        x$difftime[i] <- x$difftime[i]
+      }
+    } else if (x$difftime[i] > 1) {
+      j = i
+      while (x$difftime[j+1] > 1 | is.na(x$difftime[j+1])) {
+        x <- x[-(j+1),]
+      }
+    }
+  }
+  x$difftime <- NULL
+}
+filter.fine(collars)
+
+for (i in 1:as.numeric(dim(collars))) {
+  if (collars$animal_id[i + 1] != collars$animal_id[i] | as.numeric(dim(collars)) == i) {
+    collars$difftime[i] <- NA
+  } else if (collars$animal_id[i + 1] == collars$animal_id[i]) {
+    collars$difftime[i] <- difftime(collars$acquisition_time[i + 1], collars$acquisition_time[i], units = "hours")
+  }
+}
+k = 0
+for (i in 1:as.numeric(dim(collars))) {
+  if (is.na(collars$difftime[i])) {
+    if (i == as.numeric(dim(collars))){
+      collars$difftime[i] <- collars$difftime[i]
+    } else if (collars$difftime[i+1] > 1) {
+      j = i  
+      while (collars$difftime[j+1] > 1 | is.na(collars$difftime[j+1])) {
+        collars <- collars[-(j+1),]
+      }
+      k = k + 1
+    } else {
+      collars$burst_id[i] <- k
+    }
+  } else if (collars$difftime[i] > 1) {
+    j = i
+    while (collars$difftime[j+1] > 1 | is.na(collars$difftime[j+1])) {
+      collars <- collars[-(j+1),]
+    }
+    k = k + 1
+  } else {
+    collars$burst_id[i] <- k
+  }
+}
+if (collars$difftime[1] > 1) {
+  collars <- collars[-1,]
+}
+collars$difftime <- NULL
+
+
+
+
+# Get only bursts AND number them
+for (i in 1:as.numeric(dim(collars))) {
+  if (i == 1) {
+    collars$difftime[i] <- NA
+  } else if (collars$animal_id[i] != collars$animal_id[i-1]) {
+    collars$difftime[i] <- NA
+  } else if (collars$animal_id[i - 1] == collars$animal_id[i]) {
+    collars$difftime[i] <- difftime(collars$acquisition_time[i], collars$acquisition_time[i - 1], units = "hours")
+  }
+}
+for (i in 1:as.numeric(dim(collars))) {
+  if (i == 1) {
+    collars$difftime[i] <- NA
+  } else if ((collars$difftime[i] < 1 & collars$difftime[i-1] > 1) | (collars$difftime[i] < 1 & is.na(collars$difftime[i-1])))
+    j = i
+    while (collars$difftime[j+1] < 1 | is.na(collars$difftime[j+1])) {
+      collars <- collars[-(j+1),]
+  }
+}
+collars$difftime <- NULL
+
+
+
+
+
+
 
 # For filtering out fine scale
 oppo <- collars

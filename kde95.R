@@ -1,8 +1,9 @@
 # Here are the packages I would used to map home ranges.
-#library(adehabitatHR)
-#library(rgdal)
-#library(rgeos)
-#library(raster)
+library(adehabitatHR)
+library(rgdal)
+library(rgeos)
+library(raster)
+library(tidyverse)
 
 # First thing we'll do is run some commands just to get a look at the data. I'm going to run through examples of 
 # different types of home range mapping and easy commands for generating them. I'll be using the entire data set
@@ -142,14 +143,15 @@
 
 # The advice I can give you for writing a for loop is to look at what is common throughout all of the commands that you call to do this
 # task, and make that the iterator. If you get totally stuck, that's understandable. Give it a try though!
+
 collars <- collars[!(collars$animal_id == 'C1' & collars$acquisition_time >= as.POSIXct("2020-01-15 00:00:00", tz = 'UTC')),]
 setwd("U:/research/tccfp/tccfp_gis_layers/kde")
 id <- as.list(levels(collars$animal_id))
 for (i in id) {
   i.a <- collars[collars$animal_id == i,]
-  i.sp <- SpatialPoints(i.a[c("gps_longitude", "gps_latitude")])
+  i.sp <- SpatialPoints(i.a[c("gps_utm_easting", "gps_utm_northing")])
+  proj4string(i.sp) <- CRS("+proj=utm +zone=15 +ellps=GRS80 +datum=NAD83 +no_defs")
   i.kde <- kernelUD(i.sp, h = "href") 
   i.kde95 <- getverticeshr(i.kde, percent = 95, unin = "m", unout = "km2")
   writeOGR(i.kde95, dsn = ".", layer = paste(i, ".kde95", sep = ""), driver="ESRI Shapefile")
 }
-

@@ -1,3 +1,4 @@
+library(lubridate)
 # I like underscores and all lowercase in headers, so why not fix that?
 names(collars) <- lapply(names(collars), function(v) {
   if (is.character(v)) return(tolower(v))
@@ -52,7 +53,6 @@ collars$acquisition_time <- as.POSIXct(collars$acquisition_time, format = "%Y.%m
 collars$gps_fix_time <- as.POSIXct(collars$gps_fix_time, format = "%Y.%m.%d %H:%M:%S", tz = 'UTC')
 collars$acquisition_start_time <- as.POSIXct(collars$acquisition_start_time, format = "%Y.%m.%d %H:%M:%S", tz = 'UTC')
 collars$receive_time <- as.POSIXct(collars$receive_time, format = "%Y.%m.%d %H:%M:%S", tz = 'UTC')
-
 # Deal with redeployment of collars
 collars$animal_id <- 0
 for (i in 1:dim(collars)[1]) {
