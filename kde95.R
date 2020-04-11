@@ -155,3 +155,10 @@ for (i in id) {
   i.kde95 <- getverticeshr(i.kde, percent = 95, unin = "m", unout = "km2")
   writeOGR(i.kde95, dsn = ".", layer = paste(i, ".kde95", sep = ""), driver="ESRI Shapefile")
 }
+
+setwd("U:/research/tccfp/individuals")
+collars$used <- 1
+for (i in id) {
+  i.a <- collars[collars$animal_id == i,]
+  write.csv(i.a, paste(i, ".csv", sep = ""))
+}
