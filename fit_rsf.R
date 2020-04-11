@@ -1,3 +1,4 @@
+##################################################################################################################################
 # lme4 includes the glm function that will be used for fitting models
 library(lme4)
 # Set the working directory here to wherever you keep the files generated in QGIS
@@ -62,3 +63,4 @@ for (i in ids) {
 # This is the command you would use to check the fit for certain models (in this case for C2)
 summary(fits[["C2"]])
 # We can talk about interpretation of models after you get to this point
+##################################################################################################################################
