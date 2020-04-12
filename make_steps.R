@@ -40,17 +40,22 @@ bearing.ta <- function(xy1, xy2, xy3, as.deg = FALSE) {
 
 
 ################# This is a generalized make track function ###################################################################
-track <- function (x, y, bid, df, as.deg = FALSE, comp = FALSE, rm.missing = FALSE) {
+track <- function (df, track.name, x, y, bid, as.deg = FALSE, as.comp = FALSE, rm.missing = FALSE, too.few) {
+  # data is the data being used for the calculation
+  # track.name is the name to be specified for the new table that is generated from running this function
   # x is UTM easting
   # y is UTM northing
   # bid is the column containing burst id numbers
-  # data is the data being used for the calculation
+  # as.deg = FALSE is default, keeping the units in radians
+  # as.comp = FALSE is default, which keeps the radians on a (+/- pi) scale
+  # rm.missing = FALSE is the default, which keeps all data. rm.missing = TRUE will remove values without turn angles
+  # too.few will specify the fewest number of bursts that the user wants out of the function. For example, too.few = 3
+  # when rm.missing = FALSE would return all bursts with more than three points. The same specification with rm.missing = TRUE
+  # would return all bursts with 3 or more recorded turn angles.
   ############ Columns to be created ########################
   # ta is turn angle in radians (+/- pi)
   # sl is step length
   # bear is the bearing, defaulted to radians (+/- pi)
-  # as.deg = FALSE is default, keeping the units in radians
-  # comp = FALSE is default, which keeps the radians on a (+/- pi) scale
   for (i in 1:dim(df)) {
     if (i == 1) { 
       df[i, "ta"] <- NA
@@ -64,7 +69,7 @@ track <- function (x, y, bid, df, as.deg = FALSE, comp = FALSE, rm.missing = FAL
       s <- sign(xylen1[1]) # This will find the sign of the x difference
       s[s == 0] <- 1  # And correct for when the sign is 0
       ang = s * (xylen1[2] < 0) * pi + atan(xylen1[1] / xylen1[2])  # Calculate the compass bearing
-      if (comp) {
+      if (as.comp) {
         #This is defaulted to comp = FALSE, keeps it on +/- pi turn angles
         ang[ang < 0] <- ang[ang < 0] + 2 * pi
       }
@@ -89,7 +94,7 @@ track <- function (x, y, bid, df, as.deg = FALSE, comp = FALSE, rm.missing = FAL
       s <- sign(xylen1[1])
       s[s == 0] <- 1
       ang = s * (xylen1[2] < 0) * pi + atan(xylen1[1] / xylen1[2])
-      if (comp) {
+      if (as.comp) {
         ang[ang < 0] <- ang[ang < 0] + 2 * pi
       }
       if(is.data.frame(xylen1)) {
@@ -110,13 +115,13 @@ track <- function (x, y, bid, df, as.deg = FALSE, comp = FALSE, rm.missing = FAL
       s1 <- sign(xylen1[1])
       s1[s1 == 0] <- 1
       ang1 = s1 * (xylen1[2] < 0) * pi + atan(xylen1[1] / xylen1[2])
-      if (comp) {
+      if (as.comp) {
         ang1[ang1 < 0] <- ang1[ang1 < 0] + 2 * pi
       }
       s2 <- sign(xylen2[1])
       s2[s2 == 0] <- 1
       ang2 = s * (xylen2[2] < 0) * pi + atan(xylen2[1] / xylen2[2])
-      if (comp) {
+      if (as.comp) {
         ang2[ang2 < 0] <- ang2[ang2 < 0] + 2 * pi
       }
       if(is.data.frame(xylen1)) {
@@ -132,18 +137,21 @@ track <- function (x, y, bid, df, as.deg = FALSE, comp = FALSE, rm.missing = FAL
       df[i, "bear"] <- ang2 # Bearing of current step
     }
   }
-  for (i in 1:dim(df)) {
-    if (is.na(df[i, "ta"])) {
-    } else if (df[i, "ta"] < -pi) {
-      df[i, "ta"] <- df[i, "ta"] + 2 * pi
-    } else if (df[i, "ta"] > pi) {
-      df[i, "ta"] <- df[i, "ta"] - 2 * pi
-    }
-    if (is.na(df[i, "bear"])) {
-    } else if (df[i, "bear"] < -pi) {
-      df[i, "bear"] <- df[i, "bear"] + 2 * pi
-    } else if (df[i, "bear"] > pi) {
-      df[i, "bear"] <- df[i, "bear"] - 2 * pi
+  if (as.comp) {
+  } else {
+    for (i in 1:dim(df)) {
+      if (is.na(df[i, "ta"])) {
+      } else if (df[i, "ta"] < -pi) {
+        df[i, "ta"] <- df[i, "ta"] + 2 * pi
+      } else if (df[i, "ta"] > pi) {
+        df[i, "ta"] <- df[i, "ta"] - 2 * pi
+      }
+      if (is.na(df[i, "bear"])) {
+      } else if (df[i, "bear"] < -pi) {
+        df[i, "bear"] <- df[i, "bear"] + 2 * pi
+      } else if (df[i, "bear"] > pi) {
+        df[i, "bear"] <- df[i, "bear"] - 2 * pi
+      }
     }
   }
   if (rm.missing) {
@@ -155,10 +163,14 @@ track <- function (x, y, bid, df, as.deg = FALSE, comp = FALSE, rm.missing = FAL
     df[, "ta"] <- df[, "ta"] * u
     df[, "bear"] <- df[, "bear"] * u
   }
+  df[, "burst_id"] <- as.factor(df[, "burst_id"])
+  for (i in levels(df[, "burst_id"])) {
+    if (sum(as.numeric(df[, "burst_id"] == i)) < too.few) {
+      df <- df[!df[,"burst_id"] == i,]
+    }
+  }
   newfile <- df
-  return(assign("test", newfile, envir = .GlobalEnv))
+  return(assign(track.name, newfile, envir = .GlobalEnv))
 }
 
-track("gps_utm_easting", "gps_utm_northing", "burst_id", test)
-
-test <- test[-(is.na(test$ta)), ]
+track("gps_utm_easting", "gps_utm_northing", "burst_id", test2, rm.missing = TRUE, too.few = 3, track.name = "YES")
