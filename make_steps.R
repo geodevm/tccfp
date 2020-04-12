@@ -56,7 +56,7 @@ track <- function (df, track.name, x, y, bid, as.deg = FALSE, as.comp = FALSE, r
   # ta is turn angle in radians (+/- pi)
   # sl is step length
   # bear is the bearing, defaulted to radians (+/- pi)
-  for (i in 1:dim(df)) {
+  for (i in 1:nrow(df)) {
     if (i == 1) { 
       df[i, "ta"] <- NA
       df[i, "sl"] <- NA
@@ -69,10 +69,6 @@ track <- function (df, track.name, x, y, bid, as.deg = FALSE, as.comp = FALSE, r
       s <- sign(xylen1[1]) # This will find the sign of the x difference
       s[s == 0] <- 1  # And correct for when the sign is 0
       ang = s * (xylen1[2] < 0) * pi + atan(xylen1[1] / xylen1[2])  # Calculate the compass bearing
-      if (as.comp) {
-        #This is defaulted to comp = FALSE, keeps it on +/- pi turn angles
-        ang[ang < 0] <- ang[ang < 0] + 2 * pi
-      }
       if(is.data.frame(xylen1)) {
         sl_ <- sqrt(rowSums(xylen1^2)) # Calculate the step length (net squared displacement from previous)
       } else {
@@ -94,9 +90,6 @@ track <- function (df, track.name, x, y, bid, as.deg = FALSE, as.comp = FALSE, r
       s <- sign(xylen1[1])
       s[s == 0] <- 1
       ang = s * (xylen1[2] < 0) * pi + atan(xylen1[1] / xylen1[2])
-      if (as.comp) {
-        ang[ang < 0] <- ang[ang < 0] + 2 * pi
-      }
       if(is.data.frame(xylen1)) {
         sl_ <- sqrt(rowSums(xylen1^2))
       } else {
@@ -115,31 +108,33 @@ track <- function (df, track.name, x, y, bid, as.deg = FALSE, as.comp = FALSE, r
       s1 <- sign(xylen1[1])
       s1[s1 == 0] <- 1
       ang1 = s1 * (xylen1[2] < 0) * pi + atan(xylen1[1] / xylen1[2])
-      if (as.comp) {
-        ang1[ang1 < 0] <- ang1[ang1 < 0] + 2 * pi
-      }
       s2 <- sign(xylen2[1])
       s2[s2 == 0] <- 1
       ang2 = s * (xylen2[2] < 0) * pi + atan(xylen2[1] / xylen2[2])
-      if (as.comp) {
-        ang2[ang2 < 0] <- ang2[ang2 < 0] + 2 * pi
-      }
-      if(is.data.frame(xylen1)) {
+      if(is.data.frame(xylen2)) {
         sl_ <- sqrt(rowSums(xylen2^2)) # Calculate the current step length (net squared displacement from previous)
       } else {
         sl_ <- sqrt(sum(xylen2^2))
       }
       ta_ = (ang2 - ang1) # Calculate turn angle
-      ta_[ta_ < -pi] = ta_[ta_ < -pi] + 2 * pi # Corrections to make it +/- pi
-      ta_[ta_ > pi] = ta_[ta_ > pi] - 2 * pi
       df[i, "ta"] <- ta_
       df[i, "sl"] <- sl_
       df[i, "bear"] <- ang2 # Bearing of current step
     }
   }
   if (as.comp) {
+    for (i in 1:nrow(df)) {
+      if (is.na(df[i, "ta"])) {
+      } else if (df[i, "ta"] < 0) {
+        df[i, "ta"] <- df[i, "ta"] + (2 * pi)
+      }
+      if (is.na(df[i, "bear"])) {
+      } else if (df[i, "bear"] < 0) {
+        df[i, "bear"] <- df[i, "bear"] + 2 * pi
+      }
+    }
   } else {
-    for (i in 1:dim(df)) {
+    for (i in 1:nrow(df)) {
       if (is.na(df[i, "ta"])) {
       } else if (df[i, "ta"] < -pi) {
         df[i, "ta"] <- df[i, "ta"] + 2 * pi
@@ -173,4 +168,4 @@ track <- function (df, track.name, x, y, bid, as.deg = FALSE, as.comp = FALSE, r
   return(assign(track.name, newfile, envir = .GlobalEnv))
 }
 
-track("gps_utm_easting", "gps_utm_northing", "burst_id", test2, rm.missing = TRUE, too.few = 3, track.name = "YES")
+track(test2, "gps_utm_easting", "gps_utm_northing", "burst_id", as.comp = TRUE, rm.missing = TRUE, too.few = 3, track.name = "YES")
