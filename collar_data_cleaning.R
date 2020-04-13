@@ -18,7 +18,7 @@ collars <- collars[!is.na(collars$acquisition_time),]
 
 #Create a collar identification number column
 collars$collar_id <- 0
-for (i in 1:dim(collars)[1]) {
+for (i in 1:nrow(collars)[1]) {
     if (is.na(collars$ctn[i])) {
       collars$collar_id[i] <- NA
     } else if (collars$ctn[i] == "712851A") {
@@ -49,41 +49,24 @@ for (i in 1:dim(collars)[1]) {
 }
 
 # Datetimes to POSIXct
-collars$acquisition_time <- as.POSIXct(collars$acquisition_time, format = "%Y.%m.%d %H:%M:%S", tz = 'UTC')
-collars$gps_fix_time <- as.POSIXct(collars$gps_fix_time, format = "%Y.%m.%d %H:%M:%S", tz = 'UTC')
-collars$acquisition_start_time <- as.POSIXct(collars$acquisition_start_time, format = "%Y.%m.%d %H:%M:%S", tz = 'UTC')
-collars$receive_time <- as.POSIXct(collars$receive_time, format = "%Y.%m.%d %H:%M:%S", tz = 'UTC')
+collars$acquisition_time <- ymd_hms(collars$acquisition_time)
+collars$gps_fix_time <- ymd_hms(collars$gps_fix_time)
+collars$acquisition_start_time <- ymd_hms(collars$acquisition_start_time)
+collars$receive_time <- ymd_hms(collars$receive_time)
 # Deal with redeployment of collars
-collars$animal_id <- 0
-for (i in 1:dim(collars)[1]) {
-  if (is.na(collars$collar_id[i])) {
-    collars$animal_id[i] <- NA
-  } else if (!is.na(collars$collar_id[i]) & is.na(collars$gps_fix_time[i])) {
-    collars$animal_id[i] <- collars$animal_id[i - 1]
-  }  else if (collars$collar_id[i] == "C1" & collars$gps_fix_time[i] > as.POSIXct("2020-02-06 00:00:00", tz = 'UTC')) {
-    collars$animal_id[i] <- "C11"
-  } else {
-    collars$animal_id[i] <- collars$collar_id[i]
-  }
-}
+collars[(collars$collar_id == "C1" & collars$acquisition_time > ymd_hms("2020-02-06 00:00:00")),]$collar_id <- "C11"
 
 # Also deal with the gps points fixed when moved after death in C1
-less <- c()
-for(i in 1:dim(collars)) {
-  if (collars$animal_id[i] == 'C1' & collars$acquisition_time[i] >= as.POSIXct("2020-02-02 00:00:00", tz = 'UTC'))
-    less <- c(less, i)
-}
-collars <- collars[-less,]
+collars <- collars[-(collars$animal_id == 'C1' & collars$acquisition_time >= ymd_hms("2020-02-02 00:00:00")),]
 
 # Remove this observation, when coyote was transferred to vet clinic overnight.
-collars <- collars[!(collars$gps_latitude == 45.015218 & collars$animal_id == 'C2'),]
-
+collars <- collars[-(collars$gps_latitude == 45.015218 & collars$animal_id == 'C2'),]
 
 # Animal ID should be a factor
 collars$animal_id <- as.factor(collars$animal_id)
 
 # If this is direct from satellite, filter out useless columns as well as predeployment and others used for filtering.
-collars <- subset(collars, select = c(acquisition_time,
+collars <- subset(collars, select = !c(acquisition_time,
                                       acquisition_start_time,
                                       gps_fix_time,
                                       gps_fix_attempt,

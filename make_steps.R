@@ -22,6 +22,10 @@ tracker <- function (df, track.name, x, y, bid, as.deg = FALSE, as.comp = FALSE,
   # bear is the bearing, defaulted to radians (+/- pi)
   ##############################################################################################################
   ############ Function ########################################################################################
+  if(class(df)[2] == "tbl") {
+    df <- as.data.frame(df)
+    tbl = TRUE
+  }
   for (i in 1:nrow(df)) {
     if (i == 1) { 
       df[i, "ta"] <- NA
@@ -136,6 +140,9 @@ tracker <- function (df, track.name, x, y, bid, as.deg = FALSE, as.comp = FALSE,
     if (sum(as.numeric(df[, "burst_id"] == i)) < too.few) {
       df <- df[!df[,"burst_id"] == i,]
     }
+  }
+  if(tbl) {
+    df <- as_tibble(df)
   }
   newfile <- df
   return(assign(track.name, newfile, envir = .GlobalEnv))

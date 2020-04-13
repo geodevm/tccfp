@@ -2,52 +2,50 @@
 setwd('U:/research/tccfp/Telonics Data Converter/Reports/')
 
 # Store the names of the files in "files"
-files <- list.files()
+f <- list.files()
 
 # Filter out the .kmls and the .csv's that just contain summary statistics
-files <- subset(files, !grepl("kml", files))
-files <- subset(files, !grepl("Stat", files))
+f <- subset(f, !grepl("kml", f))
+f <- subset(f, !grepl("Stat", f))
 
 # Create an empty vector
-new.files <- c()
+n.f <- c()
 
 # Loop through to get the first round of alphanumeric groupings, is not intuitive so will need to do second loop.
-l <- as.numeric(length(files))
-for (i in 2:l) {
-  if ((as.numeric(substr(files[i], 9, 10)) > as.numeric(substr(files[i-1], 9, 10)) &
-      substr(files[i], 1, 7) == substr(files[i-1], 1, 7) & 
-      as.numeric(substr(files[i], 9, 10)) > as.numeric(substr(files[i+1], 9, 10)) &
-      substr(files[i], 1, 7) == substr(files[i+1], 1, 7)) |
-      (files[i] == files[l]) |
-      substr(files[i], 1, 7) != substr(files[i+1], 1, 7)) {
-    new.files <- c(new.files, files[i])
+for (i in 2:length(f)) {
+  if ((as.numeric(substr(f[i], 9, 10)) > as.numeric(substr(f[i-1], 9, 10)) &
+      substr(f[i], 1, 7) == substr(f[i-1], 1, 7) & 
+      as.numeric(substr(f[i], 9, 10)) > as.numeric(substr(f[i+1], 9, 10)) &
+      substr(f[i], 1, 7) == substr(f[i+1], 1, 7)) |
+      (f[i] == f[length(f)]) |
+      substr(f[i], 1, 7) != substr(f[i+1], 1, 7)) {
+    n.f <- c(n.f, f[i])
   }
 }
 
 # Create a new empty vector
-new_files <- c()
+f.f <- c()
 
 # This loop will sort out the newest broadcasts from Iridium.
-l <- as.numeric(length(new.files))
-for (i in 2:l) {
-  if ((substr(new.files[i], 1, 7) != substr(new.files[i+1], 1, 7) &
-       substr(new.files[i], 1, 7) == substr(new.files[i-1], 1, 7) &
-       as.numeric(substr(new.files[i], 9, 10)) > as.numeric(substr(new.files[i-1], 9, 10))) |
-      (substr(new.files[i], 1, 7) != substr(new.files[i+1], 1, 7) &
-       substr(new.files[i], 1, 7) != substr(new.files[i-1], 1, 7)) |
-      (new.files[i] == new.files[l] &
-       substr(new.files[i], 1, 7) == substr(new.files[i-1], 1, 7) &
-       as.numeric(substr(new.files[i], 9, 10)) > as.numeric(substr(new.files[i-1], 9, 10))) |
-      (new.files[i] == new.files[l] &
-       substr(new.files[i], 1, 7) != substr(new.files[i-1], 1, 7))) {
-    new_files <- c(new_files, new.files[i])
-  } else if ((substr(new.files[i], 1, 7) != substr(new.files[i+1], 1, 7) &
-              substr(new.files[i], 1, 7) == substr(new.files[i-1], 1, 7) &
-              as.numeric(substr(new.files[i], 9, 10)) < as.numeric(substr(new.files[i-1], 9, 10))) |
-             (new.files[i] == new.files[l] &
-              substr(new.files[i], 1, 7) == substr(new.files[i-1], 1, 7) &
-              as.numeric(substr(new.files[i], 9, 10)) < as.numeric(substr(new.files[i-1], 9, 10)))) {
-    new_files <- c(new_files, new.files[i-1])
+for (i in 2:length(n.f)) {
+  if ((substr(n.f[i], 1, 7) != substr(n.f[i+1], 1, 7) &
+       substr(n.f[i], 1, 7) == substr(n.f[i-1], 1, 7) &
+       as.numeric(substr(n.f[i], 9, 10)) > as.numeric(substr(n.f[i-1], 9, 10))) |
+      (substr(n.f[i], 1, 7) != substr(n.f[i+1], 1, 7) &
+       substr(n.f[i], 1, 7) != substr(n.f[i-1], 1, 7)) |
+      (n.f[i] == n.f[length(n.f)] &
+       substr(n.f[i], 1, 7) == substr(n.f[i-1], 1, 7) &
+       as.numeric(substr(n.f[i], 9, 10)) > as.numeric(substr(n.f[i-1], 9, 10))) |
+      (n.f[i] == n.f[length(n.f)] &
+       substr(n.f[i], 1, 7) != substr(n.f[i-1], 1, 7))) {
+    f.f <- c(f.f, n.f[i])
+  } else if ((substr(n.f[i], 1, 7) != substr(n.f[i+1], 1, 7) &
+              substr(n.f[i], 1, 7) == substr(n.f[i-1], 1, 7) &
+              as.numeric(substr(n.f[i], 9, 10)) < as.numeric(substr(n.f[i-1], 9, 10))) |
+             (n.f[i] == n.f[length(n.f)] &
+              substr(n.f[i], 1, 7) == substr(n.f[i-1], 1, 7) &
+              as.numeric(substr(n.f[i], 9, 10)) < as.numeric(substr(n.f[i-1], 9, 10)))) {
+    f.f <- c(f.f, n.f[i-1])
   }
 }
 
@@ -55,10 +53,9 @@ for (i in 2:l) {
 csvs <- list()
 
 # Loop thorugh to compile all of the data files into a list with a column corresponding to the collar identity (ctn).
-l <- as.numeric(length(new_files))
-for (i in 1:l) {
-  csvs[[i]] <- read.csv(new_files[i], header = TRUE, skip = 23, na.strings = "")
-  csvs[[i]]$ctn <- substr(new_files[i], 1, 7)
+for (i in 1:length(f.f)) {
+  csvs[[i]] <- read.csv(f.f[i], header = TRUE, skip = 23, na.strings = "")
+  csvs[[i]]$ctn <- substr(f.f[i], 1, 7)
 }
 
 # Combine into one table

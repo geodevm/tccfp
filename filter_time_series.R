@@ -1,6 +1,6 @@
 ##############INTERVALIZER######################################################################################
 ################################################################################################################
-intervalizer <- function(df, name, an.id, t, lower, upper, unit) { #############################################
+intervalizer <- function(df, name, an.id, t.col, lower, upper, unit) { #############################################
   ##############################################################################################################
   ############ Function specifications #########################################################################
   # Function 'intervalizer' will take time series data and make it into equal interval 
@@ -9,7 +9,7 @@ intervalizer <- function(df, name, an.id, t, lower, upper, unit) { #############
   # Variable 'name' is the name that will be specified for the new table
   #   defaults to name of input 'df', which will replace input table
   # Variable 'an.id' is the column containing unique animal identification number
-  # Variable 't' is the column containing the raw time sequence data
+  # Variable 't.col' is the column containing the raw time sequence data
   # Variable 'upper' is the upper limit of acceptable values for the interval
   # Variable 'lower' is the lower limit of acceptable values for the interval
   # Variable u is the units that will be used in the difftime function ("hours", "mins")
@@ -18,14 +18,17 @@ intervalizer <- function(df, name, an.id, t, lower, upper, unit) { #############
   # Column 'burst_id' will contain unique identifiers for bursts for later analyses
   ##############################################################################################################
   ############ Function ########################################################################################
-  
+  if(class(df)[2] == "tbl") {
+    df <- as.data.frame(df)
+    tbl = TRUE
+  }
   for (i in 1:nrow(df)) {
     if (df[i + 1, an.id] != df[i, an.id] | nrow(df) == i) { 
       # Inputs an NA where there is a transition between animals
       df[i, "dt"] <- NA
     } else if (df[i + 1, an.id] == df[i, an.id]) { 
       # Calculates the time difference between the current point and the next observation
-      df[i, "dt"] <- difftime(df[i + 1, t], df[i, t], units = unit)
+      df[i, "dt"] <- difftime(df[i + 1, t.col], df[i, t.col], units = unit)
     }
   }
   for (i in 1:nrow(df)) {
@@ -92,6 +95,9 @@ intervalizer <- function(df, name, an.id, t, lower, upper, unit) { #############
   # Remove the row of time differences
   df[, "dt"] <- NULL
   # Assign a file to be returned
+  if(tbl) {
+    df <- as_tibble(df)
+  }
   newfile <- df
   # Make relevant assignments
   return(assign(name, newfile, envir = .GlobalEnv))
