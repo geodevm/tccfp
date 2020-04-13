@@ -8,14 +8,14 @@ for (i in 1:as.numeric(dim(collars))) {
   }
 }
 for (i in 1:as.numeric(dim(collars))) {
-  if (collars$difftime[i] < 1.5) {
+  if (collars$difftime[i] < 4) {
     j = i
     while (collars$difftime[j+1] < 1 | is.na(collars$difftime[j+1])) {
       collars <- collars[-(j+1),]
     }
   }
 }
-if (collars$difftime[1] < 1) {
+if (collars$difftime[1] < 4) {
   collars <- collars[!1,]
 }
 collars$difftime <- NULL
@@ -114,15 +114,15 @@ fine.bursts <- function(anid, df, t, unit, up) {
   # Variable df is the data frame that is being used for the analysis
   # Variable u is the units that will be used in the difftime function
   # Variable t is the fix time
-  for (i in 1:dim(df)) {
-    if (df[i + 1, anid] != df[i, anid] | dim(df) == i) {
+  for (i in 1:nrow(df)) {
+    if (df[i + 1, anid] != df[i, anid] | nrow(df) == i) {
       df[i, "dt"] <- NA
     } else if (df[i + 1, anid] == df[i, anid]) {
       df[i, "dt"] <- difftime(df[i + 1, t], df[i, t], units = unit)
     }
   }
   k = 0
-  for (i in 1:dim(df)) {
+  for (i in 1:nrow(df)) {
     if (is.na(df[i, "dt"])) {
       if (is.null(df[i + 1, "dt"]) | is.na(df[i + 1, "dt"])) {
         df[i, "burst_id"] <- k
@@ -151,10 +151,197 @@ fine.bursts <- function(anid, df, t, unit, up) {
   if (df[1, "dt"] > up) {
     df <- df[-1,]
   }
+  newfile <- df
+  return(assign("test", newfile, envir = .GlobalEnv))
+}
+
+fine.bursts("animal_id", collars, "acquisition_time", "hours", 7)
+
+large.bursts <- function(anid, df, t, unit, low) {
+  # Variable anid is the unique animal identification number
+  # Variable df is the data frame that is being used for the analysis
+  # Variable u is the units that will be used in the difftime function
+  # Variable t is the fix time
+  for (i in 1:nrow(df)) {
+    if (df[i + 1, anid] != df[i, anid] | nrow(df) == i) {
+      df[i, "dt"] <- NA
+    } else if (df[i + 1, anid] == df[i, anid]) {
+      df[i, "dt"] <- difftime(df[i + 1, t], df[i, t], units = unit)
+    }
+  }
+  k = 0
+  for (i in 1:nrow(df)) {
+    if (is.na(df[i, "dt"])) {
+      if (is.null(df[i + 1, "dt"]) | is.na(df[i + 1, "dt"])) {
+        df[i, "burst_id"] <- k
+        break
+      } else if (df[i + 1, "dt"] < low) {
+        j = i  
+        while (df[j + 1, "dt"] < low | is.na(df[j + 1, "dt"])) {
+          df <- df[-(j+1),]
+        }
+        df[j, "burst_id"] <- k
+        k = k + 1
+      } else {
+        df[i, "burst_id"] <- k
+      }
+    } else if (df[i, "dt"] < low) {
+      j = i
+      while (df[j + 1, "dt"] < low | is.na(df[j + 1, "dt"])) {
+        df <- df[-(j+1),]
+      }
+      df[j, "burst_id"] <- k
+      k = k + 1
+    } else {
+      df[i, "burst_id"] <- k
+    }
+  }
+  if (df[1, "dt"] < low) {
+    df <- df[-1,]
+  }
+  newfile <- df
+  return(assign("test", newfile, envir = .GlobalEnv))
+}
+
+large.bursts("animal_id", collars, "acquisition_time", "hours", 5)
+
+#######################
+
+
+bursts <- function(anid, df, t, unit, low, up) {
+  # Variable anid is the unique animal identification number
+  # Variable df is the data frame that is being used for the analysis
+  # Variable u is the units that will be used in the difftime function
+  # Variable t is the fix time
+  for (i in 1:nrow(df)) {
+    if (df[i + 1, anid] != df[i, anid] | nrow(df) == i) {
+      df[i, "dt"] <- NA
+    } else if (df[i + 1, anid] == df[i, anid]) {
+      df[i, "dt"] <- difftime(df[i + 1, t], df[i, t], units = unit)
+    }
+  }
+  for (i in 1:nrow(df)) {
+    if (is.na(df[i, "dt"])){
+    } else if (df[i, "dt"] < low) {
+      j = i
+      while (df[j + 1, "dt"] < low | is.na(df[j + 1, "dt"])) {
+        df <- df[-(j + 1),]
+      }
+    }
+  }
+  k = 0
+  for (i in 1:nrow(df)) {
+    if (is.na(df[i, "dt"])) {
+      if (is.null(df[i + 1, "dt"]) | is.na(df[i + 1, "dt"])) {
+        df[i, "burst_id"] <- k
+        break
+      } else if (df[i + 1, "dt"] > up) {
+        j = i  
+        while (df[j + 1, "dt"] > up | is.na(df[j + 1, "dt"])) {
+          df <- df[-(j+1),]
+        }
+        df[j, "burst_id"] <- k
+        k = k + 1
+      } else {
+        df[i, "burst_id"] <- k
+      }
+    } else if (df[i, "dt"] > up) {
+      j = i
+      while (df[j + 1, "dt"] > up | is.na(df[j + 1, "dt"])) {
+        df <- df[-(j+1),]
+      }
+      df[j, "burst_id"] <- k
+      k = k + 1
+    } else {
+      df[i, "burst_id"] <- k
+    }
+  }
+  if (df[1, "dt"] > up) {
+    df <- df[-1,]
+  }
+  newfile <- df
+  return(assign("test", newfile, envir = .GlobalEnv))
+}
+
+bursts("animal_id", test, "acquisition_time", "hours", 4, 10)
+
+allalallal
+
+bursts <- function(anid, df, t, unit, low) {
+  # Variable anid is the unique animal identification number
+  # Variable df is the data frame that is being used for the analysis
+  # Variable u is the units that will be used in the difftime function
+  # Variable t is the fix time
+  for (i in 1:nrow(df)) {
+    if (df[i + 1, anid] != df[i, anid] | nrow(df) == i) {
+      df[i, "dt"] <- NA
+    } else if (df[i + 1, anid] == df[i, anid]) {
+      df[i, "dt"] <- difftime(df[i + 1, t], df[i, t], units = unit)
+    }
+  }
+  for (i in 1:nrow(df)) {
+    if (is.na(df[i, "dt"])){
+    } else if (df[i, "dt"] < low) {
+      j = i
+      while (df[j + 1, "dt"] < 1 | is.na(df[j + 1, "dt"])) {
+        df <- df[-(j + 1),]
+      }
+    }
+    if (df[1, "dt"] < low) {
+      df <- df[-1,]
+    }
+  }
+  newfile <- df
+  return(assign("test", newfile, envir = .GlobalEnv))
+}
+
+bursts("animal_id", test, "acquisition_time", "hours", 4)
+
+
+for (i in nrow(df)) {
+  if (df[i + 1, anid] != df[i, anid] | nrow(df) == i) {
+    df[i, "dt"] <- NA
+  } else if (df[i + 1, anid] == df[i, anid]) {
+    df[i, "dt"] <- difftime(df[i + 1, t], df[i, t], units = unit)
+  }
+}
+for (i in 1:nrow(df)) {
+  if (df[i, "dt"] < low) {
+    j = i
+    while (df[j+1, "dt"] < low | is.na(df[j+1, "dt"])) {
+      df <- df[-(j+1),]
+    }
+  }
+}
+if (df[1, "dt"] < low) {
+  df <- df[!1,]
+}
+df[, "dt"] <- NULL
+
+#########
+bursts <- function(anid, df, t, unit, low) {
+  for (i in 1:nrow(df)) {
+    if (df[i + 1, anid] != df[i, anid] | nrow(df) == i) {
+      df[i, "dt"] <- NA
+    } else if (df[i + 1, anid] == df[i, anid]) {
+      df[i, "dt"] <- difftime(df[i + 1, t], df[i, t], units = unit)
+    }
+  }
+  for (i in 1:nrow(df)) {
+    if (is.na(df[i, "dt"])) {
+    } else if (df[i, "dt"] < low) {
+      j = i
+      while (df[j + 1, "dt"] < low | is.na(df[j+1, "dt"])) {
+        df <- df[-(j+1),]
+      }
+    }
+  }
   df[, "dt"] <- NULL
   newfile <- df
   return(assign("test", newfile, envir = .GlobalEnv))
 }
 
-fine.bursts("animal_id", collars, "acquisition_time", "mins", 15)
+
+bursts("animal_id", collars, "acquisition_time", "hours", 1)
+
 
