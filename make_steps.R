@@ -1,33 +1,41 @@
-##############TRACKER###########################################################################################
-################################################################################################################
-tracker <- function (df, track.name, x, y, bid, as.deg = FALSE, as.comp = FALSE, rm.missing = FALSE, too.few) {#
-  ##############################################################################################################
-  ############ Function specifications #########################################################################
-  # data is the data being used for the calculation
-  # track.name is the name to be specified for the new table that is generated from running this function
-  # x is UTM easting
-  # y is UTM northing
-  # bid is the column containing burst id numbers
-  # as.deg = FALSE is default, keeping the units in radians
-  # as.comp = FALSE is default, which keeps the radians on a (+/- pi) scale
-  # rm.missing = FALSE is the default, which keeps all data. rm.missing = TRUE will remove values without 
-  #   turn angles
-  # too.few will specify the fewest number of bursts that the user wants out of the function. For 
-  #   example, too.few = 3 when rm.missing = FALSE would return all bursts with more than three points. 
-  #   The same specification with rm.missing = TRUE would return all bursts with 3 or more recorded turn angles.
-  ##############################################################################################################
-  ############ Columns to be created ###########################################################################
-  # ta is turn angle in radians (+/- pi)
-  # sl is step length
-  # bear is the bearing, defaulted to radians (+/- pi)
-  ##############################################################################################################
-  ############ Function ########################################################################################
-  if(class(df)[2] == "tbl") {
+####################################################################################################################
+############## TRACKER #############################################################################################
+####################################################################################################################
+tracker <- function (df, track.name, x, y, bid, as.deg = FALSE, as.comp = FALSE, rm.missing = FALSE, too.few = 1) {#
+  ##################################################################################################################
+  ############ Function specifications #############################################################################
+  # Variable 'df' is the data being used for the calculation.
+  # Variable 'track.name' is the name to be specified for the new table that is generated from running this 
+  #   function
+  # Variable 'x' is UTM easting.
+  # Variable 'y' is UTM northing.
+  # Variable 'bid' is the column containing burst identification numbers. Must have been put through function
+  #   'intervalizer' beforehand for this reason.
+  # Option 'as.deg = FALSE' is default, keeping the units in radians rather than degrees.
+  # Option 'as.comp = FALSE' is default, which keeps the radians on a (+/- pi) scale rather than a 2pi scale.
+  # Option 'rm.missing = FALSE' is the default, which keeps all data. rm.missing = TRUE will remove values 
+  #   without turn angles.
+  # Variable 'too.few' will specify the fewest number of bursts that the user wants out of the function. For 
+  #   example, 'too.few = 3' when 'rm.missing = FALSE' would return all bursts with more than three points. 
+  #   The same specification with 'rm.missing = TRUE' would return all bursts with 3 or more recorded turn angles.
+  #   Default value is 'too.few = 3'.
+  ##################################################################################################################
+  ############ Columns to be created ###############################################################################
+  # Column 'ta' is turn angle in (default) radians (+/- pi).
+  # Column 'sl' is step length.
+  # Column 'bear' is the bearing in (default) radians (+/- pi)
+  ##################################################################################################################
+  ############ FUNCTION ############################################################################################
+  if(class(df)[1] == "tbl_df") {
+    # If a tibble was entered, convert to a data.frame
     df <- as.data.frame(df)
     tbl = TRUE
+  } else {
+    tbl = FALSE
   }
   for (i in 1:nrow(df)) {
-    if (i == 1) { 
+    if (i == 1) {
+      # The first row in the table will clearly be NA for all
       df[i, "ta"] <- NA
       df[i, "sl"] <- NA
       df[i, "bear"] <- NA
@@ -142,9 +150,11 @@ tracker <- function (df, track.name, x, y, bid, as.deg = FALSE, as.comp = FALSE,
     }
   }
   if(tbl) {
+    # Return a tibble if a tibble was entered
     df <- as_tibble(df)
   }
   newfile <- df
   return(assign(track.name, newfile, envir = .GlobalEnv))
-} ##############################################################################################################
-################################################################################################################
+} ##################################################################################################################
+############## END FUNCTION ########################################################################################
+####################################################################################################################
