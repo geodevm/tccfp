@@ -1,0 +1,120 @@
+---
+title: "TCCFP Spring Meeting 2021"
+author: "Geoff Miller"
+date: "3/16/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+packages_needed <- c("knitr", "lubridate", "maptools", "raster", "move", 
+                     "amt",  "tibble", "leaflet", "dplyr", "readr", "ggplot2", 
+                     "glmmTMB", "lme4", "tidyr", "purrr", "glue", "sf", 
+                     "here", "moveVis", "GGally", "devtools", "TwoStepCLogit", 
+                     "broom", "tictoc", "ezknitr", "moveVis", "maps", "rgeos", 
+                     "maptools")
+new_packages <- packages_needed[!(packages_needed %in% 
+                                    installed.packages()[,"Package"])]
+if(length(new_packages)) 
+  install.packages(new_packages, repos = "https://cloud.r-project.org")
+
+library(knitr)
+library(lubridate)
+library(maptools)
+library(raster)
+library(move)
+library(amt) 
+library(tibble)
+library(leaflet)
+library(dplyr)
+library(readr)
+library(ggplot2)
+library(glmmTMB)
+library(sf)
+library(here)
+library(RColorBrewer)
+```
+
+## Sex by species
+
+- 1 male coyote was not collared (captured at same time/location as one that was collared).
+- 1 female red fox not collared (mortality, killed in trap by coyote). 
+
+```{r}
+collars <- read.csv(here("data/latest_data.csv"))
+biologicals <- read.csv(here("data/biologicals.csv"))
+serum_vol <- read.csv(here("data/serum_volumes.csv"))
+morts <- read.csv(here("data/mortalities.csv"))
+sex <- table(biologicals$sex, biologicals$species)
+barplot(sex, xlab = "species", legend = rownames(sex))
+```
+
+## Whether scat sample was collected.
+
+```{r}
+scat <- table(biologicals$scat, biologicals$species)
+barplot(scat, xlab = "species", legend = rownames(scat))
+```
+
+## Whether fecal sample was collected.
+
+```{r}
+fecal <- table(biologicals$fecal, biologicals$species)
+barplot(fecal, xlab = "species", legend = rownames(fecal))
+```
+
+## Whether hair sample was collected.
+
+```{r}
+hair <- table(biologicals$hair, biologicals$species)
+barplot(hair, xlab = "species", legend = rownames(hair))
+```
+## Serum volumes
+
+```{r}
+serum <- table(serum_vol$serum_ml, serum_vol$species)
+barplot(serum, xlab = "species", legend = rownames(serum), col = brewer.pal(14, name = "PRGn"))
+```
+## Mortalities and causes
+
+```{r}
+mortalities <- table(morts$cod, morts$species)
+barplot(mortalities, xlab = "species", legend = rownames(mortalities), col = brewer.pal(5, name = "PRGn"))
+```
+
+- This is an extremely high incidence of coyote killings - which are typically regarded as a perceived risk in the literature that is rarely realized. With 3/7 of our red fox deaths (and an additional attack that did not result in mortality) on the project, it seams to be a significant mortality risk in this population.
+- One of the 'free-ranging' foxes had mange as a co-morbidity, other was seemingly healthy besides injuries incurred in attacks.
+
+## Map of all locations to date.
+
+- 7 coyote collars dropped off or collected from mortality
+- 6/7 of those collars have had the full datalog file retrieved from the collar (1 was too chewed up by coyote's mate, inquiring with Telonics about work-arounds)
+- 6 fox collars retrieved from mortalities
+- all of those datalogs retrieved
+- 7 coyote collars currently deployed and contining to collect data
+- 10 fox collars currently deployed and continuing to collect data
+
+```{r}
+options(width=165,digits.secs = 3)
+opts_chunk$set(fig.width=12,fig.height=4.5, error=TRUE,cache = FALSE)
+canid.dat <- as(collars, "data.frame")
+canid.dat <- canid.dat %>% mutate(acquisition_time = ymd_hms(acquisition_time, tz = "UTC"))
+leaflet(collars) %>% addTiles()%>%
+  addCircles(canid.dat$gps_longitude, canid.dat$gps_latitude)
+```
+
+## Urbanization in the TCMA.
+
+#### Urbanization index is arbitrary - population is given a weight 5 times percent impervious surface.
+
+![](C:/Users\mill8849\Documents\R Projects\tccfp\tccfp\data/tcma.png)
+
+## Locations by animal ID number
+
+```{r}
+ggplot(canid.dat, 
+       aes(gps_longitude, gps_latitude, color = species, 
+           group = animal_id))+
+  geom_point() + coord_equal() +
+  theme(legend.position = "bottom")
+```

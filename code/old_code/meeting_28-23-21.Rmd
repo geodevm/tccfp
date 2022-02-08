@@ -1,0 +1,112 @@
+---
+title: "TCCFP Meeting FA21"
+author: "Geoff Miller"
+date: "8/23/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+packages_needed <- c("knitr", "lubridate", "maptools", "raster", "move", 
+                     "amt",  "tibble", "leaflet", "dplyr", "readr", "ggplot2", 
+                     "glmmTMB", "lme4", "tidyr", "purrr", "glue", "sf", 
+                     "here", "moveVis", "GGally", "devtools", "TwoStepCLogit", 
+                     "broom", "tictoc", "ezknitr", "moveVis", "maps", "rgeos", 
+                     "maptools")
+new_packages <- packages_needed[!(packages_needed %in% 
+                                    installed.packages()[,"Package"])]
+if(length(new_packages)) 
+  install.packages(new_packages, repos = "https://cloud.r-project.org")
+
+library(knitr)
+library(lubridate)
+library(maptools)
+library(raster)
+library(move)
+library(amt) 
+library(tibble)
+library(leaflet)
+library(dplyr)
+library(readr)
+library(ggplot2)
+library(glmmTMB)
+library(sf)
+library(here)
+library(RColorBrewer)
+```
+
+## Sex by species
+
+- 1 male coyote was not collared (captured at same time/location as one that was collared).
+- 1 female red fox not collared (mortality, killed in trap by coyote). 
+
+```{r}
+collars <- read.csv(here("data/latest_data.csv"))
+biologicals <- read.csv(here("data/biologicals.csv"))
+serum_vol <- read.csv(here("data/serum_volumes.csv"))
+morts <- read.csv(here("data/mortalities.csv"))
+sex <- table(biologicals$sex, biologicals$species)
+barplot(sex, xlab = "species", legend = rownames(sex))
+```
+
+## Urbanization in the TCMA.
+
+#### Urbanization index is arbitrary - population is given a weight 5 times percent impervious surface.
+
+![](C:/Users\mill8849\Documents\R Projects\tccfp\tccfp\data/tcma.png)
+
+## Coyote home ranges
+
+![](C:/Users\mill8849\Documents\R Projects\tccfp\tccfp\data/coyote_ranges.PNG)
+
+## Red fox home ranges
+
+![](C:/Users\mill8849\Documents\R Projects\tccfp\tccfp\data/red_fox_ranges.PNG)
+
+## Gray fox home range
+
+![](C:/Users\mill8849\Documents\R Projects\tccfp\tccfp\data/gray_fox_ranges.PNG)
+
+## Locations of current animals
+
+- 6 coyotes
+- 3 red foxes
+- 1 gray fox
+
+```{r}
+options(width=165,digits.secs = 3)
+opts_chunk$set(fig.width=12,fig.height=4.5, error=TRUE,cache = FALSE)
+canid.dat <- as(collars, "data.frame")
+canid.dat <- canid.dat %>% mutate(acquisition_time = ymd_hms(acquisition_time, tz = "UTC"))
+canid.dat.new <- canid.dat[canid.dat$acquisition_time > ymd_hms("2021-08-01 00:00:00"),]
+leaflet(collars) %>% addTiles()%>%
+  addCircles(canid.dat.new$gps_longitude, canid.dat.new$gps_latitude)
+```
+
+## Disease results
+
+- 4 coyotes had heartworm (31%)
+- 9 coyotes had lyme disease (69%)
+- 1 red fox had lyme disease (10%)
+- 1 coyote had L. autumn (7%)
+- 1 red fox had L. autumn (9%)
+- 1 red fox had L. brat (9%)
+- 1 coyote had L. grip (7%)
+- 1 fox had L. grip (9%)
+- 2 coyotes had L. ict (14%)
+- 1 red fox had both IgG for T. gondii (9%)
+- 2 red fox had IgM for T. gondii (18%)
+- 1 coyote had both immunoglobulins (7%)
+- 13 coyotes tested positive for Parvo (93%)
+- All red foxes tested positive for Parvo
+- All coyotes tested positive for Distemper
+- 8 red foxes tested positive for Distemper (73%)
+
+## Strava Data
+
+![](C:/Users\mill8849\Documents\R Projects\tccfp\tccfp\data/sc2.PNG)
+
+
+
+
+
