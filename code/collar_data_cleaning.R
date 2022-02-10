@@ -1,4 +1,5 @@
-### Data cleaning protocol for movement data ===================================
+#===============================================================================
+### Data cleaning protocol for movement data
 # Lodaing data -----------------------------------------------------------------
 # If you have not yet used my new package "trackpack" designed for working with
 # Telonics reports datasets, execute the following code:
@@ -228,6 +229,13 @@ for (i in 1:length(ids)) {
                          collars$acquisition_time >= 
                            bios$date_inactive[bios$animal_id == ids[i]]), ] 
   }
+}
+rm(i)
+# Remove all pre-deployment data
+for (i in 1:length(ids)) {
+  collars <- collars[!(collars$animal_id == ids[i] & collars$acquisition_time <= 
+                         (ymd_hms(bios$release_time[bios$animal_id == 
+                                                    ids[i]]))), ]
 }
 rm(i)
 # Retrieve activity and temperature data ---------------------------------------
