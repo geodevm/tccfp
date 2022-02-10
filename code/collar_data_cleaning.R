@@ -1,6 +1,6 @@
 #===============================================================================
 ### Data cleaning protocol for movement data
-# Lodaing data -----------------------------------------------------------------
+# Loading data -----------------------------------------------------------------
 # If you have not yet used my new package "trackpack" designed for working with
 # Telonics reports datasets, execute the following code:
 # If you haven't used devtools before:
@@ -241,8 +241,22 @@ rm(i)
 # Retrieve activity and temperature data ---------------------------------------
 # Retrieve a separate activity count data set
 activity <- collars[!is.na(collars$activity_count), ]
+# Remove 2 days after capture
+for (i in 1:length(ids)) {
+  activity <- activity[!(activity$animal_id == ids[i] & activity$acquisition_time <= 
+                         (ymd_hms(bios$release_time[bios$animal_id == ids[i]]) + 
+                            hours(48))), ]
+}
+rm(i)
 # Retrieve a separate temperature data set
 temps <- collars[!is.na(collars$temperature), ]
+# Remove 2 days after capture
+for (i in 1:length(ids)) {
+  temps <- temps[!(temps$animal_id == ids[i] & temps$acquisition_time <= 
+                           (ymd_hms(bios$release_time[bios$animal_id == ids[i]]) + 
+                              hours(48))), ]
+}
+rm(i)
 # GPS data cleaning ------------------------------------------------------------
 # Get rid of unsuccessful GPS fixes
 collars <- collars[!is.na(collars$gps_fix_attempt) | collars$gps_fix_attempt == 
@@ -425,9 +439,9 @@ reds_trk[!is.na(reds_trk$v_) & reds_trk$v_ > 50, ]
 grays_trk[!is.na(grays_trk$v_) & grays_trk$v_ > 45, ]
 rm(coyotes_trk, reds_trk, grays_trk)
 # Remove those missed by algorithm
-collars_trk <- collars_trk %>% filter(!uid == "F18_13927")
+collars_trk <- collars_trk %>% filter(!uid == "F18_13570")
 message("Manually removed the following observation(s) that were missed by the algorithm:
-        -Gray fox, F18, observation >64kmh.")
+-Gray fox, F18, observation >64kmh.")
 # Reclassify the track with the newly filtered data
 collars_trk <- collars_trk %>%
   make_track(x_, y_, t_, id = id, sp = sp, uid = uid, lon = lon, lat = lat,
@@ -442,8 +456,8 @@ collars_trk <- collars_trk %>%
 # Adjust velocity column to be km/hr
 collars_trk$v_ <- collars_trk$v_ * 3.6
 # Also classify those >10km/h for further investigation 
-collars_10_plus <- collars_trk %>%
-  filter(v_ > 10)
+collars_5_plus <- collars_trk %>%
+  filter(v_ > 5)
 # I want to see how realistic these are, so I'll compare to the preceding 3
 # observations and the following 3 observations
 # A characteristic of unrealistic movements is two movements of abnormal velocity
@@ -451,27 +465,49 @@ collars_10_plus <- collars_trk %>%
 # I'm going to find a ratio to determine whether movements are realistic or not.
 collars_trk$index <- 1:nrow(collars_trk)
 collars_investigate <- tibble()
-for (i in collars_10_plus$uid) {
+for (i in collars_5_plus$uid) {
   if (!any(collars_investigate$uid == i)) {
     row_i <- collars_trk$index[collars_trk$uid == i]
-    row_init <- row_i - 3
-    row_term <- row_i + 4
+    # This algorithm doesn't work if where at the start or end of the dataset,
+    # so these for loops look complicated but they generalize the formula to be 
+    # compatible with those different data structures.
+    for (j in 0:3) {
+      if (collars_trk[row_i, ]$id == collars_trk[(row_i - j), ]$id) {
+        row_befr <- as.numeric(j)
+      }
+    }
+    for (j in 1:4) {
+      if (collars_trk[row_i, ]$id == collars_trk[(row_i + j), ]$id) {
+        row_aftr <- as.numeric(j)
+      }
+    }
+    row_init <- row_i - row_befr
+    row_term <- row_i + row_aftr
     collars_investigate_i <- collars_trk[row_init:row_term, ]
+    row_ct <- nrow(collars_investigate_i)
+    row_fast <- row_befr + 1
     collars_investigate_i$speedy <- "no"
-    collars_investigate_i[5, ]$speedy <- "yes"
+    collars_investigate_i[row_fast, ]$speedy <- "yes"
     collars_investigate_i$burst <- i
-    v_ave <- sum(collars_investigate_i$v_[4:5]) / 2
-    burst_ave <- ((sum(collars_investigate_i$v_[1:3]) + 
-                  sum(collars_investigate_i$v_[6:8]))) / 6
-    step_ave <- sum(collars_investigate_i$sl_[4:5]) / 2
-    final_dist <- sqrt(((collars_investigate_i[6, ]$x_ - 
-                           collars_investigate_i[4, ]$x_)^2) +
-                       ((collars_investigate_i[6, ]$y_ - 
-                           collars_investigate_i[4, ]$y_)^2))
-    dist_ratio <- step_ave / final_dist
+    v_ave <- sum(collars_investigate_i$v_[row_fast:(row_fast + 1)]) / 2
+    burst_ave <- ((ifelse(row_fast == 1, 0, 
+                          sum(collars_investigate_i$v_[1:(row_fast - 1)])) + 
+                   ifelse(row_ct == (row_fast + 1), 0,
+                          sum(collars_investigate_i$v_[(row_fast + 2):row_ct])))) / 
+                    (row_ct - 2)
+    steps <- sum(collars_investigate_i$sl_[row_fast:(row_fast + 1)])
+    final_dist <- sqrt(((collars_investigate_i[(row_fast + 2), ]$x_ - 
+                           collars_investigate_i[row_fast, ]$x_)^2) +
+                       ((collars_investigate_i[(row_fast + 2), ]$y_ - 
+                           collars_investigate_i[row_fast, ]$y_)^2))
+    dist_ratio <- steps / final_dist
     v_ratio <- v_ave / burst_ave
-    if (dist_ratio <= 10 & v_ratio <= 10) {
+    if (dist_ratio <= 5 & v_ratio <= 5) {
       collars_investigate_i$good_ratio <- "yes"
+    } else if (dist_ratio <= 5 & v_ratio > 5) {
+      collars_investigate_i$good_ratio <- "maybe"
+    } else if (dist_ratio > 5 & v_ratio <= 5) {
+      collars_investigate_i$good_ratio <- "maybe"
     } else {
       collars_investigate_i$good_ratio <- "no"
     }
@@ -481,8 +517,9 @@ for (i in collars_10_plus$uid) {
     collars_investigate <- rbind(collars_investigate, collars_investigate_i)
   }
 }
-rm(v_ratio, v_ave, step_ave, row_term, row_init, row_i, i, final_dist,
-   dist_ratio, burst_ave, collars_investigate_i, collars_10_plus)
+rm(v_ratio, v_ave, steps, row_term, row_init, row_i, i, final_dist, dist_ratio, 
+   burst_ave, collars_investigate_i, collars_5_plus, row_aftr, row_befr, j,
+   row_ct, row_fast)
 # Visualize for manual filtering
 #pal <- colorFactor(c("navy", "red"), domain = c("yes", "no"))
 #leaflet(collars_investigate[41:48,]) %>% 
@@ -496,6 +533,10 @@ rm(v_ratio, v_ave, step_ave, row_term, row_init, row_i, i, final_dist,
 out <- levels(as.factor(collars_investigate[collars_investigate$good_ratio == 
                                               "no", ]$burst))
 collars_trk <- collars_trk %>% filter(!uid %in% out)
+# Check those labelled "maybe" to see if any were missed by algorithm
+collars_trk <- collars_trk %>% filter(!uid == "C9_38446")
+message("Manually removed the following observation(s) that were missed by the algorithm:
+-Coyote, C9, observation >19kmh.")
 collars <- collars %>% filter(uid %in% collars_trk$uid)
 rm(collars_investigate, collars_trk, out)
 # Make sure there are no more duplicate values
