@@ -1,0 +1,74 @@
+#===============================================================================
+#-------------------------------------------------------------------------------
+# Overview:
+#-------------------------------------------------------------------------------
+
+This .txt file describes how to open an instance of QGIS 3.22 from outside of
+the QGIS GUI using a Python (3.9.5) script. This uses PyCharm 2021.3.2
+(Community Edition), but could be set up with other IDE's as well with a
+slightly different protocol within each software type.
+
+#-------------------------------------------------------------------------------
+# Context:
+#-------------------------------------------------------------------------------
+
+Every file path mentioned in this will be relative to the file path within which
+the local QGIS is installed. Mine was installed from OSGeo4W directly into the 
+"C:\" directory. If starting from a different installation location, note that
+the file path will change accordingly.
+
+#-------------------------------------------------------------------------------
+# Download PyCharm:
+#-------------------------------------------------------------------------------
+
+Find and download the latest community edition from online. I used PyCharm 
+2021.3.2.
+
+#-------------------------------------------------------------------------------
+# Set a new .bat file:
+#-------------------------------------------------------------------------------
+
+Within the OSGeo4W installation path, navigate to the bin folder. For me this 
+was "C:\OSGeo4W\bin". Navigate to the QGIS batch file, for me that file was 
+"qgis.bat". Make a copy, and rename it "pycharm"(.bat). Open this as a text 
+file, and change it to the following (or wherever your PyCharm installed):
+
+start /d "C:\Program Files\JetBrains\PyCharm Community Edition 2021.3.2\bin" pycharm64.exe
+
+Save, and then click on the file to make sure that it redirects to a PyCharm
+app instance.
+
+#-------------------------------------------------------------------------------
+# Change Python Interpreter path:
+#------------------------------------------------------------------------------- 
+
+When PyCharm is open, navigate to Settings > Python Interpreter (on the left
+panel). Click the Settings "gear" symbol next to the Python Interpreter search
+bar, and click "Add...". Change the "Base interpretter" to the path of the QGIS
+Python version. For me this path looked like the following:
+
+C:\OSGeo4W\apps\Python39\python.exe
+
+It may be different for other installations, but this has been the only
+structure I've seen for OSGeo installations. Click "OK" to navigate out of that
+window.
+
+#-------------------------------------------------------------------------------
+# Add PyQGIS package paths:
+#-------------------------------------------------------------------------------
+
+While remaining in the Pthyon interpreter section of the Settings window, click
+on the Settings "gear" again. This time, select "Show all...". A new window will
+open, and in the tool bar you will see an icon that looks like a filing scheme. 
+If you hover over this icon, it will read "Show paths for the selected 
+interpreter." Select this, and add the following paths (starting with where your
+installation is located):
+
+C:\OSGeo4W\apps\qgis\python
+C:\OSGeo4W\apps\qgis\python\plugins
+
+Click "OK," exit the Python Interpeter "Show all..." window, and click apply in
+the bottom right of the Settings window. At this point, you will be able to run
+QGIS scripts without having to open QGIS itself.
+
+#===============================================================================
