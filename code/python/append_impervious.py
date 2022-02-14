@@ -1,51 +1,64 @@
 #===============================================================================
-# This script MUST be run from the python console within QGIS. Developed on
-# QGIS version 3.22. This framework appends an area weighted average within a
-# buffer around a point layer, and will work for any numeric field of a raster
-# dataset.
+# This script can be run from the python console within QGIS. Developed on
+# QGIS version 3.22 and Python 3.9.5. This framework appends an area weighted
+# average within a buffer around a point layer, and will work for any numeric
+# field of a raster dataset. Setup for this script must be set within the QGIS
+# Python environment, and details about how to configure that are included in
+# the "pyqgis_env_setup.txt" document.
 # Import -----------------------------------------------------------------------
-import os
-from qgis.core import (
-    QgsVectorLayer,
-    QgsVectorFileWriter
+from qgis.core import *
+# Supply path to qgis install location
+QgsApplication.setPrefixPath("C:/OSGeo4W/apps/qgis", True)
+# Create a reference to the QgsApplication. Setting the second argument to
+# False disables the GUI.
+qgs = QgsApplication([], False)
+# Load providers
+qgs.initQgis()
+# Import more
+from qgis.PyQt.QtCore import (
+    QVariant,
 )
 import math
-from osgeo import gdal
 import processing
-from PyQt5.QtCore import QVariant
 from processing.core.Processing import Processing
 Processing.initialize()
 # Data read and management -----------------------------------------------------
-# Set root directory
-root = "C:/Users/mill8849/Documents/R Projects/tccfp/tccfp/data/"
+# Set root directory. THIS MUST BE CHANGED ON DIFFERENT MACHINES.
+root = "C:/Users/mill8849/Documents/analysis_projects/tccfp/tccfp/data/"
 # Read in gps_dat from csv
 uri = "file:///" + root + \
 "processed_data/movement_data.csv?encoding=%s&delimiter=%s&xField=%s&yField=%s&crs=%s" % \
 ("UTF-8",",", "gps_utm_easting", "gps_utm_northing","epsg:26915")
-gps_data = iface.addVectorLayer(uri, "gps_data", "delimitedtext")
+gps_data = QgsVectorLayer(uri, "gps_data", "delimitedtext")
 #Check if layer is valid
 if not gps_data:
     print("Layer failed to load!")
+else:
+    QgsProject.instance().addMapLayer(gps_data)
 # Read in imp
 imp_path = root + "gis_layers/impervious/TCMA_Impervious_2000.tif"
-imp = iface.addRasterLayer(imp_path)
+imp = QgsRasterLayer(imp_path, "imp")
 if not imp:
     print("Layer failed to load!")
+else:
+    QgsProject.instance().addMapLayer(imp)
 # Read in outline
 outline_path = root + "gis_layers/metro_outline/metro_outline.shp"
-outline = iface.addVectorLayer(outline_path, "metro_outline", "ogr")
+outline = QgsVectorLayer(outline_path, "metro_outline", "ogr")
 if not outline:
     print("Layer failed to load!")
+else:
+    QgsProject.instance().addMapLayer(outline)
 # Pre-iteration processing -----------------------------------------------------
 # We want to clip the gps data by the extent of the TCMA since that is our data
 # extent for this spatial layer. We'll do a clip.
 gps_params = {
     'INPUT' : gps_data,
-    'OUTPUT' : 'TEMPORARY_OUTPUT', 
+    'OUTPUT' : 'TEMPORARY_OUTPUT',
     'OVERLAY' : outline
 }
-processing.runAndLoadResults("qgis:clip", gps_params)
-gps = iface.activeLayer()
+results = processing.run("qgis:clip", gps_params)
+gps = results['OUTPUT']
 # We also want to add the attribute field that we'll be iteratively adding
 layer_provider = gps.dataProvider()
 layer_provider.addAttributes([QgsField("population", QVariant.Double)])
@@ -55,7 +68,7 @@ QgsProject.instance().removeMapLayer(gps_data)
 QgsProject.instance().removeMapLayer(outline)
 ## Iteration section
 # Buffer distance b
-# This is the baseline buffer. Most important value for the entire script 
+# This is the baseline buffer. Most important value for the entire script
 # because it determines the entire outcome. It's buffer b because it comes
 # second during iteration.
 buff_dist_b = 20
@@ -66,7 +79,7 @@ buff_dist_b = 20
 # pythagorean theorem, we know that this is sqrt((pixel l /2)^2 *2).
 buff_dist_a = math.sqrt(((imp.rasterUnitsPerPixelX() / 2) ** 2) * 2) + \
 buff_dist_b
-# We also want to store the total area of our buffer, pi * r ^ 2 
+# We also want to store the total area of our buffer, pi * r ^ 2
 total_area = math.pi * (buff_dist_b ** 2)
 # Retrieve features to be iterated over
 features = gps.getFeatures()
@@ -95,13 +108,13 @@ for feature in features:
     # raster centroid is what's intersected as explained above, this is where
     # that value is used.
     buff_a_params = {
-        'DISSOLVE' : False, 
-        'DISTANCE' : buff_dist_a, 
-        'END_CAP_STYLE' : 0, 
-        'INPUT' : pts, 
-        'JOIN_STYLE' : 0, 
-        'MITER_LIMIT' : 2, 
-        'OUTPUT' : 'TEMPORARY_OUTPUT', 
+        'DISSOLVE' : False,
+        'DISTANCE' : buff_dist_a,
+        'END_CAP_STYLE' : 0,
+        'INPUT' : pts,
+        'JOIN_STYLE' : 0,
+        'MITER_LIMIT' : 2,
+        'OUTPUT' : 'TEMPORARY_OUTPUT',
         'SEGMENTS' : 5
     }
     results = processing.run("native:buffer", buff_a_params)
@@ -121,13 +134,13 @@ for feature in features:
     # Add the layer to the Layers panel
     QgsProject.instance().addMapLayers([pts_2])
     buff_b_params = {
-        'DISSOLVE' : False, 
-        'DISTANCE' : buff_dist_b, 
-        'END_CAP_STYLE' : 0, 
-        'INPUT' : pts_2, 
-        'JOIN_STYLE' : 0, 
-        'MITER_LIMIT' : 2, 
-        'OUTPUT' : 'TEMPORARY_OUTPUT', 
+        'DISSOLVE' : False,
+        'DISTANCE' : buff_dist_b,
+        'END_CAP_STYLE' : 0,
+        'INPUT' : pts_2,
+        'JOIN_STYLE' : 0,
+        'MITER_LIMIT' : 2,
+        'OUTPUT' : 'TEMPORARY_OUTPUT',
         'SEGMENTS' : 5
     }
     results = processing.run("native:buffer", buff_b_params)
@@ -142,7 +155,7 @@ for feature in features:
         'EXTRA' : '',
         'INPUT' : imp,
         'KEEP_RESOLUTION' : True,
-        'MASK' : buff_a_i, 
+        'MASK' : buff_a_i,
         'MULTITHREADING' : False,
         'NODATA' : None,
         'OPTIONS' : '',
@@ -151,7 +164,7 @@ for feature in features:
         'SOURCE_CRS' : None,
         'TARGET_CRS' : None,
         'X_RESOLUTION' : None,
-        'Y_RESOLUTION' : None 
+        'Y_RESOLUTION' : None
     }
     results = processing.run("gdal:cliprasterbymasklayer", \
     icr_params)
@@ -162,20 +175,20 @@ for feature in features:
         'EIGHT_CONNECTEDNESS' : True,
         'EXTRA' : '',
         'FIELD' : 'DN',
-        'INPUT' : imp_clip_rast, 
+        'INPUT' : imp_clip_rast,
         'OUTPUT' : 'TEMPORARY_OUTPUT'
     }
     results = processing.run("gdal:polygonize", icv_params)
     imp_clip_vec_int = results['OUTPUT']
     # Do a zero length buffer in case of corrupted geometry.
     buff_zero_params_vec = {
-        'DISSOLVE' : False, 
-        'DISTANCE' : 0, 
-        'END_CAP_STYLE' : 0, 
-        'INPUT' : imp_clip_vec_int, 
-        'JOIN_STYLE' : 0, 
-        'MITER_LIMIT' : 2, 
-        'OUTPUT' : 'TEMPORARY_OUTPUT', 
+        'DISSOLVE' : False,
+        'DISTANCE' : 0,
+        'END_CAP_STYLE' : 0,
+        'INPUT' : imp_clip_vec_int,
+        'JOIN_STYLE' : 0,
+        'MITER_LIMIT' : 2,
+        'OUTPUT' : 'TEMPORARY_OUTPUT',
         'SEGMENTS' : 5
     }
     results = processing.run("native:buffer", buff_zero_params_vec)
@@ -183,28 +196,28 @@ for feature in features:
     # Clip the polygonized raster to the main buffer.
     ic_params = {
         'INPUT' : imp_clip_vec,
-        'OUTPUT' : 'TEMPORARY_OUTPUT', 
+        'OUTPUT' : 'TEMPORARY_OUTPUT',
         'OVERLAY' : buff_b_i
     }
     results = processing.run("qgis:clip", ic_params)
     imp_clip_int = results['OUTPUT']
     # Do a zero length buffer in case of corrupted geometry.
     buff_zero_params_imp = {
-        'DISSOLVE' : False, 
-        'DISTANCE' : 0, 
-        'END_CAP_STYLE' : 0, 
-        'INPUT' : imp_clip_int, 
-        'JOIN_STYLE' : 0, 
-        'MITER_LIMIT' : 2, 
-        'OUTPUT' : 'TEMPORARY_OUTPUT', 
+        'DISSOLVE' : False,
+        'DISTANCE' : 0,
+        'END_CAP_STYLE' : 0,
+        'INPUT' : imp_clip_int,
+        'JOIN_STYLE' : 0,
+        'MITER_LIMIT' : 2,
+        'OUTPUT' : 'TEMPORARY_OUTPUT',
         'SEGMENTS' : 5
     }
-    results = processing.runAndLoadResults("native:buffer", buff_zero_params_imp)
-    layer = iface.activeLayer()
+    results = processing.run("native:buffer", buff_zero_params_imp)
+    layer = results['OUTPUT']
     # Loop through the clipped layer to get the weighted average by summing with
     # the iterator j
     j = 0
-    for clip in layer.getFeatures():        
+    for clip in layer.getFeatures():
         weight_value = clip.geometry().area() / total_area
         value = round((clip['DN'] * weight_value), 2)
         j = j + value
@@ -228,4 +241,7 @@ QgsVectorFileWriter.writeAsVectorFormat(gps, out_path, "utf-8", \
 gps.crs(), "CSV")
 # Close file
 QgsProject.instance().removeMapLayer(gps)
+# Finally, exitQgis() is called to remove the provider and layer registries
+# from memory.
+qgs.exitQgis()
 #===============================================================================

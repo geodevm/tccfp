@@ -1,35 +1,50 @@
 #===============================================================================
-# This script MUST be run from the python console within QGIS. Developed on
-# QGIS version 3.22. This framework appends an area weighted average within a
-# buffer around a point layer, and will work for any numeric field of a polygon
-# shapefile.
+# This script can be run from the python console within QGIS. Developed on
+# QGIS version 3.22 and Python 3.9.5. This framework appends an area weighted
+# average within a buffer around a point layer, and will work for any numeric
+# field of a polygon shapefile. Setup for this script must be set within the
+# QGIS Python environment, and details about how to configure that are included
+# in the "pyqgis_env_setup.txt" document.
 # Import -----------------------------------------------------------------------
 import os
-from qgis.core import (
-    QgsVectorLayer,
-    QgsVectorFileWriter
+from qgis.core import *
+# Supply path to qgis install location
+QgsApplication.setPrefixPath("C:/OSGeo4W/apps/qgis", True)
+# Create a reference to the QgsApplication. Setting the second argument to
+# False disables the GUI.
+qgs = QgsApplication([], False)
+# Load providers
+qgs.initQgis()
+# Import more
+from qgis.PyQt.QtCore import (
+    QVariant,
+    QRectF,
 )
 import math
+from osgeo import gdal
 import processing
-from PyQt5.QtCore import QVariant
 from processing.core.Processing import Processing
 Processing.initialize()
 # Data read and management -----------------------------------------------------
-# Set root directory
-root = "C:/Users/mill8849/Documents/R Projects/tccfp/tccfp/data/"
+# Set root directory. THIS MUST BE CHANGED ON DIFFERENT MACHINES.
+root = "C:/Users/mill8849/Documents/analysis_projects/tccfp/tccfp/data/"
 # Read in gps_dat from csv
 uri = "file:///" + root + \
 "processed_data/movement_data.csv?encoding=%s&delimiter=%s&xField=%s&yField=%s&crs=%s" % \
 ("UTF-8",",", "gps_utm_easting", "gps_utm_northing","epsg:26915")
-gps_data = iface.addVectorLayer(uri, "gps_data", "delimitedtext")
+gps_data = QgsVectorLayer(uri, "gps_data", "delimitedtext")
 #Check if layer is valid
 if not gps_data:
     print("Layer failed to load!")
+else:
+    QgsProject.instance().addMapLayer(gps_data)
 # Read in pop
 pop_path = root + "gis_layers/population_density/population_density.shp"
-pop_init = iface.addVectorLayer(pop_path, "pop_init", "ogr")
+pop_init = QgsVectorLayer(pop_path, "pop_init", "ogr")
 if not pop_init:
     print("Layer failed to load!")
+else:
+    QgsProject.instance().addMapLayer(pop_init)
 # We should ensure that the geometry is not corrupted with a zero length buffer
 buff_zero_params_pop = {
         'DISSOLVE' : False, 
@@ -41,14 +56,16 @@ buff_zero_params_pop = {
         'OUTPUT' : 'TEMPORARY_OUTPUT', 
         'SEGMENTS' : 5
     }
-results = processing.runAndLoadResults("native:buffer", buff_zero_params_pop)
+results = processing.run("native:buffer", buff_zero_params_pop)
 pop = results['OUTPUT']
 QgsProject.instance().removeMapLayer(pop_init)
 # Read in outline
 outline_path = root + "gis_layers/metro_outline/metro_outline.shp"
-outline = iface.addVectorLayer(outline_path, "metro_outline", "ogr")
+outline = QgsVectorLayer(outline_path, "metro_outline", "ogr")
 if not outline:
     print("Layer failed to load!")
+else:
+    QgsProject.instance().addMapLayer(outline)
 # Pre-iteration processing -----------------------------------------------------
 # We want to clip the gps data by the extent of the TCMA since that is our data
 # extent for this spatial layer. We'll do a clip.
@@ -57,8 +74,8 @@ gps_params = {
     'OUTPUT' : 'TEMPORARY_OUTPUT', 
     'OVERLAY' : outline
 }
-processing.runAndLoadResults("qgis:clip", gps_params)
-gps = iface.activeLayer()
+results = processing.run("qgis:clip", gps_params)
+gps = results['OUTPUT']
 # We also want to add the attribute field that we'll be iteratively adding
 layer_provider = gps.dataProvider()
 layer_provider.addAttributes([QgsField("pop_den", QVariant.Double)])
@@ -129,8 +146,8 @@ for feature in features:
         'OUTPUT' : 'TEMPORARY_OUTPUT', 
         'SEGMENTS' : 5
     }
-    processing.runAndLoadResults("native:buffer", buff_zero_params_c)
-    layer = iface.activeLayer()
+    processing.run("native:buffer", buff_zero_params_c)
+    layer = results['OUTPUT']
     # Loop through the clipped layer to get the weighted average by summing with
     # the iterator j
     j = 0
@@ -158,4 +175,7 @@ QgsVectorFileWriter.writeAsVectorFormat(gps, out_path, "utf-8", \
 gps.crs(), "CSV")
 # Close file
 QgsProject.instance().removeMapLayer(gps)
+# Finally, exitQgis() is called to remove the provider and layer registries
+# from memory.
+qgs.exitQgis()
 #===============================================================================
