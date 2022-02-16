@@ -53,7 +53,7 @@ buff_zero_params_pop = {
         'INPUT' : pop_init, 
         'JOIN_STYLE' : 0, 
         'MITER_LIMIT' : 2, 
-        'OUTPUT' : 'TEMPORARY_OUTPUT', 
+        'OUTPUT' : QgsProcessing.TEMPORARY_OUTPUT,
         'SEGMENTS' : 5
     }
 results = processing.run("native:buffer", buff_zero_params_pop)
@@ -71,7 +71,7 @@ else:
 # extent for this spatial layer. We'll do a clip.
 gps_params = {
     'INPUT' : gps_data,
-    'OUTPUT' : 'TEMPORARY_OUTPUT', 
+    'OUTPUT' : QgsProcessing.TEMPORARY_OUTPUT,
     'OVERLAY' : outline
 }
 results = processing.run("qgis:clip", gps_params)
@@ -120,7 +120,7 @@ for feature in features:
         'INPUT' : pts, 
         'JOIN_STYLE' : 0, 
         'MITER_LIMIT' : 2, 
-        'OUTPUT' : 'TEMPORARY_OUTPUT', 
+        'OUTPUT' : QgsProcessing.TEMPORARY_OUTPUT,
         'SEGMENTS' : 5
     }
     results = processing.run("native:buffer", buff_params)
@@ -130,7 +130,7 @@ for feature in features:
     # Clip the pop layer within the buffer
     c_params = {
         'INPUT' : pop,
-        'OUTPUT' : 'TEMPORARY_OUTPUT', 
+        'OUTPUT' : QgsProcessing.TEMPORARY_OUTPUT,
         'OVERLAY' : buff_i
     }
     results = processing.run("qgis:clip", c_params)
@@ -143,7 +143,7 @@ for feature in features:
         'INPUT' : clip_int, 
         'JOIN_STYLE' : 0, 
         'MITER_LIMIT' : 2, 
-        'OUTPUT' : 'TEMPORARY_OUTPUT', 
+        'OUTPUT' : QgsProcessing.TEMPORARY_OUTPUT,
         'SEGMENTS' : 5
     }
     processing.run("native:buffer", buff_zero_params_c)

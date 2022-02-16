@@ -54,7 +54,7 @@ else:
 # extent for this spatial layer. We'll do a clip.
 gps_params = {
     'INPUT' : gps_data,
-    'OUTPUT' : 'TEMPORARY_OUTPUT',
+    'OUTPUT' : QgsProcessing.TEMPORARY_OUTPUT,
     'OVERLAY' : outline
 }
 results = processing.run("qgis:clip", gps_params)
@@ -114,7 +114,7 @@ for feature in features:
         'INPUT' : pts,
         'JOIN_STYLE' : 0,
         'MITER_LIMIT' : 2,
-        'OUTPUT' : 'TEMPORARY_OUTPUT',
+        'OUTPUT' : QgsProcessing.TEMPORARY_OUTPUT,
         'SEGMENTS' : 5
     }
     results = processing.run("native:buffer", buff_a_params)
@@ -140,7 +140,7 @@ for feature in features:
         'INPUT' : pts_2,
         'JOIN_STYLE' : 0,
         'MITER_LIMIT' : 2,
-        'OUTPUT' : 'TEMPORARY_OUTPUT',
+        'OUTPUT' : QgsProcessing.TEMPORARY_OUTPUT,
         'SEGMENTS' : 5
     }
     results = processing.run("native:buffer", buff_b_params)
@@ -159,7 +159,7 @@ for feature in features:
         'MULTITHREADING' : False,
         'NODATA' : None,
         'OPTIONS' : '',
-        'OUTPUT' : 'TEMPORARY_OUTPUT',
+        'OUTPUT' : QgsProcessing.TEMPORARY_OUTPUT,
         'SET_RESOLUTION' : False,
         'SOURCE_CRS' : None,
         'TARGET_CRS' : None,
@@ -176,7 +176,7 @@ for feature in features:
         'EXTRA' : '',
         'FIELD' : 'DN',
         'INPUT' : imp_clip_rast,
-        'OUTPUT' : 'TEMPORARY_OUTPUT'
+        'OUTPUT' : QgsProcessing.TEMPORARY_OUTPUT
     }
     results = processing.run("gdal:polygonize", icv_params)
     imp_clip_vec_int = results['OUTPUT']
@@ -188,7 +188,7 @@ for feature in features:
         'INPUT' : imp_clip_vec_int,
         'JOIN_STYLE' : 0,
         'MITER_LIMIT' : 2,
-        'OUTPUT' : 'TEMPORARY_OUTPUT',
+        'OUTPUT' : QgsProcessing.TEMPORARY_OUTPUT,
         'SEGMENTS' : 5
     }
     results = processing.run("native:buffer", buff_zero_params_vec)
@@ -196,7 +196,7 @@ for feature in features:
     # Clip the polygonized raster to the main buffer.
     ic_params = {
         'INPUT' : imp_clip_vec,
-        'OUTPUT' : 'TEMPORARY_OUTPUT',
+        'OUTPUT' : QgsProcessing.TEMPORARY_OUTPUT,
         'OVERLAY' : buff_b_i
     }
     results = processing.run("qgis:clip", ic_params)
@@ -209,7 +209,7 @@ for feature in features:
         'INPUT' : imp_clip_int,
         'JOIN_STYLE' : 0,
         'MITER_LIMIT' : 2,
-        'OUTPUT' : 'TEMPORARY_OUTPUT',
+        'OUTPUT' : QgsProcessing.TEMPORARY_OUTPUT,
         'SEGMENTS' : 5
     }
     results = processing.run("native:buffer", buff_zero_params_imp)
