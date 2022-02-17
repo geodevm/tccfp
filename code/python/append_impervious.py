@@ -15,9 +15,7 @@ qgs = QgsApplication([], False)
 # Load providers
 qgs.initQgis()
 # Import more
-from qgis.PyQt.QtCore import (
-    QVariant,
-)
+from qgis.PyQt.QtCore import QVariant
 import math
 import processing
 from processing.core.Processing import Processing

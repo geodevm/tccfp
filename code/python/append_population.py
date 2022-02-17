@@ -16,10 +16,7 @@ qgs = QgsApplication([], False)
 # Load providers
 qgs.initQgis()
 # Import more
-from qgis.PyQt.QtCore import (
-    QVariant,
-    QRectF,
-)
+from qgis.PyQt.QtCore import QVariant
 import math
 from osgeo import gdal
 import processing
