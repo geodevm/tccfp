@@ -9,8 +9,7 @@ tracker <- function (df, track.name, x, y, bid, as.deg = FALSE, as.comp = FALSE,
   #   function
   # Variable 'x' is UTM easting.
   # Variable 'y' is UTM northing.
-  # Variable 'bid' is the column containing burst identification numbers. Must have been put through function
-  #   'intervalizer' beforehand for this reason.
+  # Variable 'bid' is the column containing burst identification column.
   # Option 'as.deg = FALSE' is default, keeping the units in radians rather than degrees.
   # Option 'as.comp = FALSE' is default, which keeps the radians on a (+/- pi) scale rather than a 2pi scale.
   # Option 'rm.missing = FALSE' is the default, which keeps all data. rm.missing = TRUE will remove values 
@@ -119,15 +118,15 @@ tracker <- function (df, track.name, x, y, bid, as.deg = FALSE, as.comp = FALSE,
     for (i in 1:nrow(df)) {
       if (is.na(df[i, "ta"])) {
       } else if (df[i, "ta"] < -pi) {
-        df[i, "ta"] <- df[i, "ta"] + 2 * pi
+        df[i, "ta"] <- -(df[i, "ta"] + 2 * pi)
       } else if (df[i, "ta"] > pi) {
-        df[i, "ta"] <- df[i, "ta"] - 2 * pi
+        df[i, "ta"] <- -(df[i, "ta"] - 2 * pi)
       }
       if (is.na(df[i, "bear"])) {
       } else if (df[i, "bear"] < -pi) {
-        df[i, "bear"] <- df[i, "bear"] + 2 * pi
+        df[i, "bear"] <- -(df[i, "bear"] + 2 * pi)
       } else if (df[i, "bear"] > pi) {
-        df[i, "bear"] <- df[i, "bear"] - 2 * pi
+        df[i, "bear"] <- -(df[i, "bear"] - 2 * pi)
       }
     }
   }
@@ -142,13 +141,24 @@ tracker <- function (df, track.name, x, y, bid, as.deg = FALSE, as.comp = FALSE,
     df[, "ta"] <- df[, "ta"] * u
     df[, "bear"] <- df[, "bear"] * u
   }
-  df[, "burst_id"] <- as.factor(df[, "burst_id"]) # Make 'burst_id' a factor
-  for (i in levels(df[, "burst_id"])) {
+  df[, bid] <- as.factor(df[, bid]) # Make 'burst_id' a factor
+  for (i in levels(df[, bid])) {
     # Remove bursts with less than too.few observations
-    if (sum(as.numeric(df[, "burst_id"] == i)) < too.few) {
-      df <- df[!df[,"burst_id"] == i,]
+    if (sum(as.numeric(df[, bid] == i)) < too.few) {
+      df <- df[!df[, bid] == i,]
     }
   }
+  # I made a mistake that shifts the output ahead one iteration number, so this
+  # code is a fill in to shift it back one cell so I don't have to change the
+  # whole algorithm..
+  for (i in 1:(nrow(df) - 1)) {
+    df[i, "ta"] <- df[i + 1, "ta"]
+    df[i, "sl"] <- df[i + 1, "sl"]
+    df[i, "bear"] <- df[i + 1, "bear"]
+  }
+  df[nrow(df), "ta"] <- NA
+  df[nrow(df), "sl"] <- NA
+  df[nrow(df), "bear"] <- NA
   if(tbl) {
     # Return a tibble if a tibble was entered
     df <- as_tibble(df)
