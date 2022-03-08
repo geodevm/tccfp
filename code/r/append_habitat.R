@@ -16,8 +16,7 @@ if (exists("movement")) {
   gps <- movement %>% filter(complete.cases(movement[, c("gps_utm_easting", 
                                                          "gps_utm_northing", 
                                                          "gps_fix_time")]))
-  drops <- c("animal_id", "species", "gps_fix_time", "activity_fix_time",
-             "temperature_fix_time", "geometry", "gps_altitude", 
+  drops <- c("activity_fix_time", "temperature_fix_time", "gps_altitude", 
              "activity_count", "temperature", "gps_longitude", "gps_latitude", 
              "acquisition_start_time")
   gps <- gps[, !(names(gps) %in% drops)]
@@ -83,10 +82,7 @@ for (i in 1:nrow(gps_sf)) {
 rm(buff_rast, buff_20, ct_table, lvls, j, landcover, i)
 # End loop ---------------------------------------------------------------------
 # Clean and join data before exporting -----------------------------------------
-drops <- c("animal_id", "species", "gps_fix_time", "activity_fix_time",
-           "temperature_fix_time", "geometry", "gps_altitude", "activity_count",
-           "temperature", "gps_longitude", "gps_latitude", 
-           "acquisition_start_time")
+drops <- c("animal_id", "species", "gps_fix_time", "geometry")
 # Filter out rows
 gps_sf <- gps_sf[, !(names(gps_sf) %in% drops)]
 rm(drops)
