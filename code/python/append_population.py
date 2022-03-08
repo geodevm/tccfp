@@ -4,9 +4,9 @@
 # average within a buffer around a point layer, and will work for any numeric
 # field of a polygon shapefile. Setup for this script must be set within the
 # QGIS Python environment, and details about how to configure that are included
-# in the "pyqgis_env_setup.txt" document.
+# in the "pyqgis_env_setup.txt" document. This script appends population
+# density.
 # Import -----------------------------------------------------------------------
-import os
 from qgis.core import *
 # Supply path to qgis install location
 QgsApplication.setPrefixPath("C:/OSGeo4W/apps/qgis", True)
@@ -27,7 +27,7 @@ Processing.initialize()
 root = "C:/Users/mill8849/Documents/analysis_projects/tccfp/tccfp/data/"
 # Read in gps_dat from csv
 uri = "file:///" + root + \
-"processed_data/movement_data.csv?encoding=%s&delimiter=%s&xField=%s&yField=%s&crs=%s" % \
+"processed_data/gps_data.csv?encoding=%s&delimiter=%s&xField=%s&yField=%s&crs=%s" % \
 ("UTF-8",",", "gps_utm_easting", "gps_utm_northing","epsg:26915")
 gps_data = QgsVectorLayer(uri, "gps_data", "delimitedtext")
 #Check if layer is valid

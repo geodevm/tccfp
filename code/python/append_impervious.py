@@ -4,7 +4,8 @@
 # average within a buffer around a point layer, and will work for any numeric
 # field of a raster dataset. Setup for this script must be set within the QGIS
 # Python environment, and details about how to configure that are included in
-# the "pyqgis_env_setup.txt" document.
+# the "pyqgis_env_setup.txt" document. This script appends percent impervious
+# surface.
 # Import -----------------------------------------------------------------------
 from qgis.core import *
 # Supply path to qgis install location
@@ -25,7 +26,7 @@ Processing.initialize()
 root = "C:/Users/mill8849/Documents/analysis_projects/tccfp/tccfp/data/"
 # Read in gps_dat from csv
 uri = "file:///" + root + \
-"processed_data/movement_data.csv?encoding=%s&delimiter=%s&xField=%s&yField=%s&crs=%s" % \
+"processed_data/gps_data.csv?encoding=%s&delimiter=%s&xField=%s&yField=%s&crs=%s" % \
 ("UTF-8",",", "gps_utm_easting", "gps_utm_northing","epsg:26915")
 gps_data = QgsVectorLayer(uri, "gps_data", "delimitedtext")
 #Check if layer is valid
@@ -59,7 +60,7 @@ results = processing.run("qgis:clip", gps_params)
 gps = results['OUTPUT']
 # We also want to add the attribute field that we'll be iteratively adding
 layer_provider = gps.dataProvider()
-layer_provider.addAttributes([QgsField("population", QVariant.Double)])
+layer_provider.addAttributes([QgsField("imp", QVariant.Double)])
 gps.updateFields()
 # Remove the features that are no longer needed
 QgsProject.instance().removeMapLayer(gps_data)
