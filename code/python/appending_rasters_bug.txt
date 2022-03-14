@@ -1,0 +1,56 @@
+#===============================================================================
+#-------------------------------------------------------------------------------
+# Overview:
+#-------------------------------------------------------------------------------
+
+This .txt file describes a bug in the appending raster variables as weighted
+averages. The bug prevents the iteration through all locations, and the script
+crashes at iteration number 9983. This txt document provides a manual work
+around.
+
+#-------------------------------------------------------------------------------
+# Bug:
+#-------------------------------------------------------------------------------
+
+When running in PyCharm, scripts crash after 9983 iterations.
+
+#-------------------------------------------------------------------------------
+# Manual fix:
+#-------------------------------------------------------------------------------
+
+First run:
+
+As the input, use the gps_data.csv file.
+
+At the end of the loop, insert this:
+
+if i == 9983:
+    break
+
+As the output, assign as *_appended.csv.
+
+#-------------------------------------------------------------------------------
+
+Subsequent runs:
+
+As the input, use the *_appended.csv file.
+
+At the start of the loop for the first run, insert this:
+
+if i < 9983:
+    i = i + 1
+    print(i)
+    continue
+
+In subseqent runs, change the numeric value to 19966, 29949, 39932, 49915.
+
+At the end of the loop, insert this:
+
+if i == 19966:
+    break
+
+In subseqent runs, change the numeric value to 29949, 39932, 49915, 59898.
+
+As the output, assign as *_appended.csv.
+
+#===============================================================================
