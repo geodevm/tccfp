@@ -27,7 +27,7 @@ gps_trk <- gps %>%
              id = animal_id,
              sp = species,
              crs = "epsg:26915") %>%
-  time_of_day()
+  time_of_day(include.crepuscule = TRUE)
 plot(gps_trk)
 rm(gps)
 # Make an 11-hr track with steps
