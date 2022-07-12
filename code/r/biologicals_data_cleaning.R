@@ -1,9 +1,11 @@
 #===============================================================================
 ### Data cleaning protocol for biological data
+# Collect total runtime --------------------------------------------------------
+begin <- proc.time()
 # Load packages ----------------------------------------------------------------
 library(here)
-library(tidyverse)
 library(lubridate)
+library(tidyverse)
 # Load in data -----------------------------------------------------------------
 # Using .csv format, load in all biologicals data
 biologicals <- tibble(read.csv(here("data/raw_data/processing_raw.csv"), 
@@ -14,8 +16,8 @@ serology <- tibble(read.csv(here("data/raw_data/serology_raw.csv"), header = T,
                             sep = ",", na.strings = NA))
 fecal <- tibble(read.csv(here("data/raw_data/fecal_raw.csv"), header = T, 
                          sep = ",", na.strings = NA))
-#isotope <- tibble(read.csv(here("data/raw_data/isotope_raw.csv"), header = T, 
-#                           sep = ",", na.strings = NA))
+isotope <- tibble(read.csv(here("data/raw_data/isotope_raw.csv"), header = T, 
+                           sep = ",", na.strings = NA))
 # Cleaning processing data -----------------------------------------------------
 # Formatting weight so that all are in kilograms
 # If weight is in lbs, multiply by 0.453592 to get kilograms
@@ -23,9 +25,11 @@ biologicals$weight <- ifelse(biologicals$weight_unit == "lbs",
                              biologicals$weight * 0.453592, 
                              biologicals$weight)
 # Subtract collar weight if needed
-if (biologicals$with_collar == "Y") {
-  ifelse(biologicals$collar_type == "c", biologicals$weight[i] - 0.31,
-         biologicals$weight[i] - 0.13)
+for (i in 1:nrow(biologicals)) {
+  if (biologicals$with_collar[i] == "Y") {
+    ifelse(biologicals$collar_type[i] == "c", biologicals$weight[i] - 0.31,
+           biologicals$weight[i] - 0.13)
+  }
 }
 # Round weights to 2 digits
 biologicals$weight <- format(round(biologicals$weight, 2), nsmall = 2)
@@ -48,7 +52,6 @@ for (i in 1:nrow(biologicals)) {
                                          sep = "")
   } 
 }
-rm(i)
 biologicals$release_time <- biologicals$release_time %>%
   ymd_hms(tz = "America/Chicago") %>%
   with_tz(tzone = "UTC")
@@ -72,7 +75,6 @@ for (i in datetimes) {
     with_tz(tzone = "UTC")
   biologicals$ref <- NULL
 }
-rm(datetimes, i)
 # Convert Fahrenheit to Celsius
 # (F-32)/1.8
 # Since all were measured in Fahr, all can be converted, one decimal
@@ -92,7 +94,15 @@ biologicals$fecal <- ifelse(biologicals$fecal == "N", 0, 1)
 biologicals$hair <- ifelse(biologicals$hair == "N", 0, 1)
 biologicals$scat <- ifelse(biologicals$scat == "N", 0, 1)
 biologicals$redeploy <- ifelse(biologicals$redeploy == "N", 0, 1)
+biologicals$retrieved <- ifelse(biologicals$retrieved == "N", 0, 1)
 biologicals$dropped <- ifelse(biologicals$dropped == "N", 0, 1)
+biologicals$dead_battery <- ifelse(biologicals$dead_battery == "N", 0, 1)
+biologicals$unknown_fate <- ifelse(biologicals$unknown_fate == "N", 0, 1)
+biologicals$mortality <- ifelse(biologicals$mortality == "N", 0, 1)
+biologicals$cod_mange <- ifelse(biologicals$cod_mange == "N", 0, 1)
+biologicals$cod_canine_trauma <- ifelse(biologicals$cod_canine_trauma == "N",
+                                        0, 1)
+biologicals$cod_emaciated <- ifelse(biologicals$cod_emaciated == "N", 0, 1)
 # Add a fleas column
 biologicals$fleas <- ifelse(biologicals$parasites == "N", 0, 1)
 # All covid tests were negative, so we can just fill in 0's for any observation
@@ -119,10 +129,11 @@ drops <- c("observer_init", "location", "injuries", "injuries_comments",
            "oral_covid_id", "rectal_covid_id", "human_1_init", "human_1_id", 
            "human_2_init", "human_2_id", "human_3_init", "human_3_id")
 biologicals <- biologicals[, !(names(biologicals) %in% drops)]
-rm(drops)
 # change column name for id to be common between data sets
 names(biologicals)[names(biologicals) == "identification"] <- "animal_id"
-# Export just the cleaned processing data
+rm(datetimes, drops, i)
+# Export -----------------------------------------------------------------------
+# Export just the cleaned processing data as csv
 biologicals %>%
   relocate(c("animal_id", "species")) %>%
   write.csv(here("data/processed_data/processing_data.csv"), row.names = FALSE)
@@ -133,7 +144,8 @@ drops <- c("empty_tube_g", "plus_hair_g", "hno3_ul", "h2o2_ul",
            "h2o_ml", "plus_h2o_g", "icp_sol_g")
 metals <- metals[, !(names(metals) %in% drops)]
 rm(drops)
-# Export just the cleaned metals data
+# Export -----------------------------------------------------------------------
+# Export just the cleaned metals data as csv
 metals %>%
   relocate(c("animal_id", "species")) %>%
   write.csv(here("data/processed_data/metals_data.csv"), row.names = FALSE)
@@ -151,7 +163,8 @@ drops <- c("l_autumn_titer", "l_brat_titer", "l_can_titer",
            "canine_distemper_comment")
 serology <- serology[, !(names(serology) %in% drops)]
 rm(drops)
-# Export just the cleaned serology data
+# Export -----------------------------------------------------------------------
+# Export just the cleaned serology data as csv
 serology %>%
   relocate(c("animal_id", "species")) %>%
   write.csv(here("data/processed_data/serology_data.csv"), row.names = FALSE)
@@ -163,30 +176,47 @@ serology <- serology[, !(names(serology) == "species")]
 drops <- c("date_fecal_processed", "observers", "total", "zinc", "sucrose", 
            "freezer", "comments")
 fecal <- fecal[, !(names(fecal) %in% drops)]
-rm(drops)
 # Remove rows where tests are all NA due to being stored for further processing.
 fecal <- fecal[-which(is.na(fecal[,4:46])),]
-# Export just the cleaned fecal data
+rm(drops)
+# Export -----------------------------------------------------------------------
+# Export just the cleaned fecal data as csv
 fecal %>%
   relocate(c("animal_id", "species")) %>%
   write.csv(here("data/processed_data/fecal_data.csv"), row.names = FALSE)
 # Also drop the species variable as it will be redundant when joined.
 fecal <- fecal[, !(names(fecal) == "species")]
+# Cleaning the isotope data ----------------------------------------------------
+# We don't need all of this data to be appended, so exclude some of the columns.
+# Also drop the species variable as it will be redundant when joined. For
+# our analysis, we also don't want the underfur included
+isotope <- isotope %>%
+  filter(hair_type == "guard")
+drops <- c("n2_amp", "co2_amp", "hair_type")
+isotope <- isotope[, !(names(isotope) %in% drops)]
+sps <- biologicals %>%
+  select(animal_id, species)
+isotope <- isotope %>%
+  left_join(sps, by = "animal_id")
+rm(drops)
+# Export -----------------------------------------------------------------------
+# Export just the cleaned serology data as csv
+isotope %>%
+  relocate(c("animal_id", "species")) %>%
+  write.csv(here("data/processed_data/isotope_data.csv"), row.names = FALSE)
+# Also drop the species variable as it will be redundant when joined.
+isotope <- isotope[, !(names(isotope) == "species")]
 # Export the full biologicals dataset ------------------------------------------
 # Join the metals and serology data to the processing data
 biologicals <- biologicals %>%
   left_join(metals, by = "animal_id") %>%
   left_join(serology, by = "animal_id") %>%
-  left_join(fecal, by = "animal_id") #%>%
-#  left_join(isotope, by = "animal_id")
-rm(metals)
-rm(serology)
-rm(fecal)
-#rm(isotope)
+  left_join(fecal, by = "animal_id") %>%
+  left_join(isotope, by = "animal_id")
 # Coerce everything into the right format
 biologicals <- biologicals %>%
   mutate_at(vars(animal_id, species, teeth_color, teeth_wear, sagital_crest,
-                 sex, age_determination, cod_simple), 
+                 sex, age_determination, cod_proximate, fate), 
             funs(as.factor)) %>%
   mutate_at(vars(ketamine, xylazine, additional_ketamine, additional_xylazine, 
                  body_length, tail_length, blood_collected, atipamezole, weight, 
@@ -199,26 +229,37 @@ biologicals <- biologicals %>%
                  l_ict, l_pom, t_gondii_igg, t_gondii_igm, parvo_canine,
                  canine_distemper, mange, redeploy, fleas, fecal, hair, scat, 
                  teeth_cond, covid_antigen, covid_oral, covid_rectal, 
-                 covid_nasal, dropped, redepcollar, t_c_s, t_c_s_ct, t_l_s, 
+                 covid_nasal, retrieved, redepcollar, t_c_s, t_c_s_ct, t_l_s, 
                  t_l_s_ct, s_s, s_s_ct, c_s, c_s_ct, g_z, g_z_ct, s_z, s_z_ct, 
                  u_s, u_s_ct, u_z, u_z_ct, t_g_z, t_g_z_ct, t_s_l_s, t_s_l_s_ct,
                  e_s, e_s_ct, t_g_s, t_g_s_ct, m_s, m_s_ct, c_z, c_z_ct, cr_s,
                  cr_s_ct, ca_s, ca_s_ct, i_s, i_s_ct, t_v_s, t_v_s_ct, d_l_s, 
-                 d_l_s_ct, i_z, i_z_ct, a_c_z, a_c_z_ct, t_v_z, t_v_z_ct), 
+                 d_l_s_ct, i_z, i_z_ct, a_c_z, a_c_z_ct, t_v_z, t_v_z_ct, 
+                 cod_mange, cod_canine_trauma, retrieved, dropped, dead_battery,
+                 unknown_fate, mortality), 
             funs(as.integer)) %>%
   mutate_at(vars(date_processed, date_inactive), 
-            funs(as.Date)) %>%
+            funs(as_date)) %>%
   mutate_at(vars(injection_time, additional_injection_time, induction_time,
                  reversal_time, time_alert, temp_1_time, temp_2_time,
                  temp_3_time, temp_4_time, release_time), 
-            funs(as.POSIXct))
+            funs(as_datetime))
 message(
-  "The warning messages for the 'temp_*' and 'redpocollar' columns are fine. Warnings about dplyr deprecated functions are also ok."
+  "The warning messages for the 'temp_*' and 'redpocollar' columns are fine."
 )
 # Reorder the columns to be more intuitive
 biologicals <- biologicals %>%
   relocate(c("animal_id", "species"))
-# Export the csv
+# Export the full dataset as csv
 biologicals %>%
   write.csv(here("data/processed_data/biologicals_data.csv"), row.names = FALSE)
+rm(fecal, metals, serology)
+# Collect total runtime --------------------------------------------------------
+end <- proc.time() - begin
+message("The following time elapsed for this script: \n", 
+        names(end[1]), ": ", end[[1]], "\n",
+        names(end[2]), ":  ", end[[2]], "\n",
+        names(end[3]), ":   ", end[[3]])
+rm(begin, end)
 #===============================================================================
+

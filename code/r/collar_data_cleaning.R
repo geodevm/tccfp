@@ -1,5 +1,7 @@
 #===============================================================================
 ### Data cleaning protocol for movement data
+# Collect total runtime --------------------------------------------------------
+begin <- proc.time() 
 # Loading data -----------------------------------------------------------------
 # If you have not yet used my new package "trackpack" designed for working with
 # Telonics reports datasets, execute the following code:
@@ -28,43 +30,44 @@ if (exists("biologicals")) {
   message("Pre-processed biologicals data found. Nice.")
 } else {
   message(
-    "Pre-processed biologicals data has not been found. Damn. Processing now."
+    "Pre-processed biologicals data has not been found. Processing now."
     )
   # Load in data
   bios <- read.csv(here("data/processed_data/biologicals_data.csv"))
   # Coerce all variables into the right format
   bios <- bios %>%
     mutate_at(vars(animal_id, species, teeth_color, teeth_wear, sagital_crest,
-                   sex, age_determination, cod_simple), 
+                   sex, age_determination, cod_proximate, fate), 
               funs(as.factor)) %>%
     mutate_at(vars(ketamine, xylazine, additional_ketamine, additional_xylazine, 
-                   body_length, tail_length, blood_collected, atipamezole, 
-                   weight, hair_sample_g, na, mg, al, p, k, ca, v, cr, mn, fe, 
-                   co, ni, cu, zn, as, se, cd, pb, neck_circumference, temp_1, 
-                   temp_2, temp_3, temp_4), 
+                   body_length, tail_length, blood_collected, atipamezole, weight, 
+                   hair_sample_g, na, mg, al, p, k, ca, v, cr, mn, fe, co, ni, cu, 
+                   zn, as, se, cd, pb, neck_circumference, temp_1, temp_2, temp_3, 
+                   temp_4), 
               funs(as.numeric)) %>%
     mutate_at(vars(heartworm_antigen, ehrlichia_antibody, lyme_disease_antibody,
-                   anaplasmosis_antibody, l_autumn, l_brat, l_can, l_grip, 
-                   l_hard, l_ict, l_pom, t_gondii_igg, t_gondii_igm, 
-                   parvo_canine, canine_distemper, mange, redeploy, fleas, 
-                   fecal, hair, scat, teeth_cond, covid_antigen, covid_oral, 
-                   covid_rectal, covid_nasal, dropped, redepcollar, t_c_s, 
-                   t_c_s_ct, t_l_s, t_l_s_ct, s_s, s_s_ct, c_s, c_s_ct, g_z, 
-                   g_z_ct, s_z, s_z_ct, u_s, u_s_ct, u_z, u_z_ct, t_g_z, 
-                   t_g_z_ct, t_s_l_s, t_s_l_s_ct, e_s, e_s_ct, t_g_s, t_g_s_ct, 
-                   m_s, m_s_ct, c_z, c_z_ct, cr_s, cr_s_ct, ca_s, ca_s_ct, i_s, 
-                   i_s_ct, t_v_s, t_v_s_ct, d_l_s, d_l_s_ct, i_z, i_z_ct, a_c_z, 
-                   a_c_z_ct, t_v_z, t_v_z_ct), 
+                   anaplasmosis_antibody, l_autumn, l_brat, l_can, l_grip, l_hard, 
+                   l_ict, l_pom, t_gondii_igg, t_gondii_igm, parvo_canine,
+                   canine_distemper, mange, redeploy, fleas, fecal, hair, scat, 
+                   teeth_cond, covid_antigen, covid_oral, covid_rectal, 
+                   covid_nasal, retrieved, redepcollar, t_c_s, t_c_s_ct, t_l_s, 
+                   t_l_s_ct, s_s, s_s_ct, c_s, c_s_ct, g_z, g_z_ct, s_z, s_z_ct, 
+                   u_s, u_s_ct, u_z, u_z_ct, t_g_z, t_g_z_ct, t_s_l_s, t_s_l_s_ct,
+                   e_s, e_s_ct, t_g_s, t_g_s_ct, m_s, m_s_ct, c_z, c_z_ct, cr_s,
+                   cr_s_ct, ca_s, ca_s_ct, i_s, i_s_ct, t_v_s, t_v_s_ct, d_l_s, 
+                   d_l_s_ct, i_z, i_z_ct, a_c_z, a_c_z_ct, t_v_z, t_v_z_ct, 
+                   cod_mange, cod_canine_trauma, retrieved, dropped, dead_battery,
+                   unknown_fate, mortality), 
               funs(as.integer)) %>%
     mutate_at(vars(date_processed, date_inactive), 
-              funs(as.Date)) %>%
+              funs(as_date)) %>%
     mutate_at(vars(injection_time, additional_injection_time, induction_time,
                    reversal_time, time_alert, temp_1_time, temp_2_time,
                    temp_3_time, temp_4_time, release_time), 
-              funs(as.POSIXct))
+              funs(as_datetime))
 }
 # Compile and reformat collars data  -------------------------------------------
-# I like underscores and all lowercase in headers, so why not fix that?
+# I like underscores and all lowercase in headers
 names(collars) <- names(collars) %>% tolower()
 names(collars) <- gsub("\\.", "_", names(collars))
 #Create a collar identification number column
@@ -137,7 +140,7 @@ collars$species[collars$ctn == "719842B"] <- "coyote"
 collars$species[collars$ctn == "719843A"] <- "coyote"
 # Make an animal id column
 collars$animal_id <- collars$collar_id
-# Datetimes to POSIXct using lubridate
+# Datetimes using lubridate
 collars$acquisition_time <- ymd_hms(collars$acquisition_time)
 collars$gps_fix_time <- ymd_hms(collars$gps_fix_time)
 collars$acquisition_start_time <- ymd_hms(collars$acquisition_start_time)
@@ -202,16 +205,16 @@ wrangle_712883A <- function (path, tidy = TRUE) {
                   }
 collars_C5 <- wrangle_712883A(here("data/telonics_reports"))
 rm(wrangle_712883A)
-# I like underscores and all lowercase in headers, so why not fix that?
+# I like underscores and all lowercase in headers
 names(collars_C5) <- names(collars_C5) %>% tolower()
 names(collars_C5) <- gsub("\\.", "_", names(collars_C5))
 #Create a collar identification number column
-collars_C5$collar_id[collars_C5$ctn == "712883A"] <- "C5"
+collars_C5$collar_id <- "C5"
 # Create a species identification column
-collars_C5$species[collars_C5$ctn == "712883A"] <- "coyote"
+collars_C5$species <- "coyote"
 # Make an animal id column
 collars_C5$animal_id <- collars_C5$collar_id
-# Datetimes to POSIXct
+# Datetimes
 collars_C5$acquisition_time <- ymd_hms(collars_C5$acquisition_time)
 collars_C5$gps_fix_time <- ymd_hms(collars_C5$gps_fix_time)
 collars_C5$acquisition_start_time <- ymd_hms(collars_C5$acquisition_start_time)
@@ -288,7 +291,7 @@ hist(collars$gps_horizontal_dilution[collars$species == "coyote"])
 collars <- collars %>% filter(gps_horizontal_dilution <= 10)
 # Top biological speeds for each species
 # Create UIDs
-collars$uid <- paste(collars$animal_id, "_", rownames(collars))
+collars$uid <- paste0(collars$animal_id, "_", rownames(collars))
 # Converting tracks for each species
 coyotes_trk <- collars[collars$species == "coyote", ] %>%
   make_track(gps_utm_easting,
@@ -323,22 +326,19 @@ grays_trk <- collars[collars$species == "gray fox", ] %>%
 # Add a speed and step length column
 coyotes_trk <- coyotes_trk %>%
   nest(data = -"id") %>%
-  mutate(sl_ = map(data, step_lengths),
-         v_ = map(data, speed)) %>%
+  mutate(sl_ = map(data, step_lengths), v_ = map(data, amt::speed)) %>%
   dplyr::select(id, sl_, v_, data) %>%
   as_tibble() %>%
   tidyr::unnest(cols = c(sl_, v_, data))
 reds_trk <- reds_trk %>%
   nest(data = -"id") %>%
-  mutate(sl_ = map(data, step_lengths),
-         v_ = map(data, speed)) %>%
+  mutate(sl_ = map(data, step_lengths), v_ = map(data, amt::speed)) %>%
   dplyr::select(id, sl_, v_, data) %>%
   as_tibble() %>%
   tidyr::unnest(cols = c(sl_, v_, data))
 grays_trk <- grays_trk %>%
   nest(data = -"id") %>%
-  mutate(sl_ = map(data, step_lengths),
-         v_ = map(data, speed)) %>%
+  mutate(sl_ = map(data, step_lengths), v_ = map(data, amt::speed)) %>%
   dplyr::select(id, sl_, v_, data) %>%
   as_tibble() %>%
   tidyr::unnest(cols = c(sl_, v_, data))
@@ -447,13 +447,13 @@ collars_trk <- collars_trk %>%
 # Add a speed and step length column
 collars_trk <- collars_trk %>%
   nest(data = -"id") %>%
-  mutate(sl_ = map(data, step_lengths), v_ = map(data, speed)) %>%
+  mutate(sl_ = map(data, step_lengths), v_ = map(data, amt::speed)) %>%
   dplyr::select(id, sl_, v_, data) %>%
   as_tibble() %>%
   tidyr::unnest(cols = c(sl_, v_, data))
 # Adjust velocity column to be km/hr
 collars_trk$v_ <- collars_trk$v_ * 3.6
-# Also classify those >10km/h for further investigation 
+# Also classify those >5km/h for further investigation 
 collars_5_plus <- collars_trk %>%
   filter(v_ > 5)
 # I want to see how realistic these are, so I'll compare to the preceding 3
@@ -543,9 +543,9 @@ sum <- collars %>%
   duplicated %>%
   sum()
 if (sum == 0) {
-  message("SUCCESS BITCHES")
+  message("SUCCESS")
 } else { 
-  message("FAILURE BITCH")
+  message("FAILURE")
   quit(save="ask")
 }
 rm(sum)
@@ -563,7 +563,7 @@ summary <- tibble(species = c("coyote", "red fox", "gray fox"),
                   count = as.numeric(c(coy_ct_2, red_ct_2, gray_ct_2)),
                   lost = as.numeric(c(coy_loss, red_loss, gray_loss)),
                   percent_lost = as.numeric(c(coy_per, red_per, gray_per)))
-summary
+message(summary)
 rm(summary, coy_ct_2, red_ct_2, gray_ct_2, coy_loss, red_loss, gray_loss, 
    coy_per, red_per, gray_per, coy_ct, red_ct, gray_ct)
 # GPS data exporting
@@ -590,7 +590,7 @@ collars <- collars %>%
 message("Warnings about dplyr deprecated functions are ok.")
 # Export GPS data alone
 collars %>%
-  select(animal_id, species, gps_fix_time, gps_latitude, gps_longitude, 
+  dplyr::select(animal_id, species, gps_fix_time, gps_latitude, gps_longitude, 
          gps_utm_northing, gps_utm_easting, gps_altitude) %>%
   relocate(c("animal_id", "species", "gps_fix_time", "gps_utm_northing", 
              "gps_utm_easting", "gps_altitude")) %>%
@@ -620,7 +620,7 @@ message("Warnings about dplyr deprecated functions are ok.")
 activity <- activity %>% rename(activity_fix_time = acquisition_time)
 # Export activity data alone
 activity %>%
-  select(animal_id, species, activity_fix_time, activity_count) %>%
+  dplyr::select(animal_id, species, activity_fix_time, activity_count) %>%
   relocate(c("animal_id", "species", "activity_fix_time", "activity_count")) %>%
   write.csv(here("data/processed_data/activity_data.csv"), row.names = FALSE)
 # Temperature data cleaning ----------------------------------------------------
@@ -648,7 +648,7 @@ message("Warnings about dplyr deprecated functions are ok.")
 temps <- temps %>% rename(temperature_fix_time = acquisition_time)
 # Export temperature data alone
 temps %>%
-  select(animal_id, species, temperature_fix_time, temperature) %>%
+  dplyr::select(animal_id, species, temperature_fix_time, temperature) %>%
   relocate(c("animal_id", "species", "temperature_fix_time", "temperature")) %>%
   write.csv(here("data/processed_data/temperature_data.csv"), row.names = FALSE)
 # Full movement data exporting -------------------------------------------------
@@ -679,17 +679,24 @@ movement <- movement %>%
 message("Warnings about dplyr deprecated functions are ok.")
 # Check for any duplicates
 sum <- movement %>%
-  select(acquisition_start_time, animal_id) %>%
+  dplyr::select(acquisition_start_time, animal_id) %>%
   duplicated %>%
   sum()
 if (sum == 0) {
-  message("SUCCESS BITCHES")
+  message("SUCCESS")
 } else { 
-  message("FAILURE BITCH")
+  message("FAILURE")
   quit(save="ask")
 }
 rm(sum)
 # Export data
 movement %>%
   write.csv(here("data/processed_data/movement_data.csv"), row.names = FALSE)
+# Collect total runtime --------------------------------------------------------
+end <- proc.time() - begin
+message("The following time elapsed for this script: \n", 
+        names(end[1]), ": ", end[[1]], "\n",
+        names(end[2]), ":  ", end[[2]], "\n",
+        names(end[3]), ":   ", end[[3]])
+rm(begin, end)
 #===============================================================================

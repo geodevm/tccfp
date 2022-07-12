@@ -1,8 +1,11 @@
 #===============================================================================
-### Initialize data from .csv files 
+### Initialize data from .csv files
+# Collect total runtime --------------------------------------------------------
+begin <- proc.time() 
 # Load in packages -------------------------------------------------------------
 library(tidyverse)
 library(here)
+library(lubridate)
 # Read in full datasets ========================================================
 # This dataset includes all of the additional datasets (metals, fecal, serology)
 # appended to the processing data. If you read in this, there's no need to read
@@ -18,8 +21,7 @@ movement <- movement %>%
                  gps_utm_easting, gps_altitude, activity_count), 
             funs(as.numeric)) %>%
   mutate_at(vars(activity_fix_time, gps_fix_time, temperature_fix_time, 
-                 acquisition_start_time), 
-            funs(as.POSIXct))
+                 acquisition_start_time), funs(as_datetime))
 message("Warnings about dplyr deprecated functions are ok.")
 message("Movement dataset should be >1.6 million obs. of 13 variables")
 # 2. Read in full biologicals data ---------------------------------------------
@@ -52,9 +54,7 @@ biologicals <- biologicals %>%
             funs(as.Date)) %>%
   mutate_at(vars(injection_time, additional_injection_time, induction_time,
                  reversal_time, time_alert, temp_1_time, temp_2_time,
-                 temp_3_time, temp_4_time, release_time), 
-            funs(as.POSIXct))
-message("Warnings about dplyr deprecated functions are ok.")
+                 temp_3_time, temp_4_time, release_time), funs(as_datetime))
 message("Biologicals dataset should be 37 obs. of 125 variables")
 #===============================================================================
 ### Read in partial datasets 
@@ -67,8 +67,7 @@ gps <- gps %>%
   mutate_at(vars(gps_latitude, gps_longitude, gps_utm_northing, gps_utm_easting, 
                  gps_altitude), 
             funs(as.numeric)) %>%
-  mutate_at(vars(gps_fix_time), funs(as.POSIXct))
-message("Warnings about dplyr deprecated functions are ok.")
+  mutate_at(vars(gps_fix_time), funs(as_datetime))
 message("GPS dataset should be >55000 obs. of 8 variables.")
 # Read in activity data --------------------------------------------------------
 activity <- tibble(read.csv(here("data/processed_data/activity_data.csv")))
@@ -76,8 +75,7 @@ activity <- tibble(read.csv(here("data/processed_data/activity_data.csv")))
 activity <- activity %>%
   mutate_at(vars(animal_id, species), funs(as.factor)) %>%
   mutate_at(vars(activity_count), funs(as.numeric)) %>%
-  mutate_at(vars(activity_fix_time), funs(as.POSIXct))
-message("Warnings about dplyr deprecated functions are ok.")
+  mutate_at(vars(activity_fix_time), funs(as_datetime))
 message("Activity dataset should be >1.6 million obs. of 4 variables.")
 # Read in temperature data -----------------------------------------------------
 temperature <- tibble(read.csv(here("data/processed_data/temperature_data.csv")))
@@ -85,8 +83,7 @@ temperature <- tibble(read.csv(here("data/processed_data/temperature_data.csv"))
 temperature <- temperature %>%
   mutate_at(vars(animal_id, species), funs(as.factor)) %>%
   mutate_at(vars(temperature), funs(as.numeric)) %>%
-  mutate_at(vars(temperature_fix_time), funs(as.POSIXct))
-message("Warnings about dplyr deprecated functions are ok.")
+  mutate_at(vars(temperature_fix_time), funs(as_datetime))
 message("Temperature dataset should be >1.6 million obs. of 4 variables.")
 # Read in processing data ------------------------------------------------------
 processing <- tibble(read.csv(here("data/processed_data/processing_data.csv")))
@@ -104,12 +101,12 @@ processing <- processing %>%
                  redepcollar), 
             funs(as.integer)) %>%
   mutate_at(vars(date_processed, date_inactive), 
-            funs(as.Date)) %>%
+            funs(as_date)) %>%
   mutate_at(vars(injection_time, additional_injection_time, induction_time,
                  reversal_time, time_alert, temp_1_time, temp_2_time,
                  temp_3_time, temp_4_time, release_time), 
-            funs(as.POSIXct))
-message("Warnings about dplyr deprecated functions and NA coercion are ok.")
+            funs(as_datetime))
+message("Warnings about NA coercion are ok.")
 message("Processing dataset should be 37 obs. of 47 variables")
 # Read in serology data --------------------------------------------------------
 serology <- tibble(read.csv(here("data/processed_data/serology_data.csv")))
@@ -121,7 +118,6 @@ serology <- serology %>%
                  l_ict, l_pom, t_gondii_igg, t_gondii_igm, parvo_canine,
                  canine_distemper), 
             funs(as.integer))
-message("Warnings about dplyr deprecated functions are ok.")
 message("Serology dataset should be 30 obs. of 17 variables")
 # Read in metals data ----------------------------------------------------------
 metals <- tibble(read.csv(here("data/processed_data/metals_data.csv")))
@@ -131,7 +127,6 @@ metals <- metals %>%
   mutate_at(vars(hair_sample_g, na, mg, al, p, k, ca, v, cr, mn, fe, co, ni, cu, 
                  zn, as, se, cd, pb), 
             funs(as.numeric))
-message("Warnings about dplyr deprecated functions are ok.")
 message("Metals dataset should be 31 obs. of 21 variables")
 # Read in fecal data -----------------------------------------------------------
 fecal <- tibble(read.csv(here("data/processed_data/fecal_data.csv")))
@@ -146,6 +141,12 @@ fecal <- fecal %>%
                  i_s_ct, t_v_s, t_v_s_ct, d_l_s, d_l_s_ct, i_z, i_z_ct, a_c_z, 
                  a_c_z_ct, t_v_z, t_v_z_ct), 
             funs(as.integer))
-message("Warnings about dplyr deprecated functions are ok.")
 message("Fecal dataset should be 8 obs. of 46 variables")
+# Collect total runtime --------------------------------------------------------
+end <- proc.time() - begin
+message("The following time elapsed for this script: \n", 
+        names(end[1]), ": ", end[[1]], "\n",
+        names(end[2]), ":  ", end[[2]], "\n",
+        names(end[3]), ":   ", end[[3]])
+rm(begin, end)
 #===============================================================================
